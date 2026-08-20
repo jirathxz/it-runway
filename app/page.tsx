@@ -1,69 +1,153 @@
-import Image from "next/image";
+import type { Metadata } from "next";
+import Carousel from "@/components/Carousel";
+import Reveal from "@/components/Reveal";
+import { EventCard, RecoCard, MiniCard, RegCard } from "@/components/EventCards";
+import { getEvents } from "@/lib/data";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "IT-Runway — ปฏิทินงานวิ่ง สมัครงานวิ่ง มาราธอน เทรล",
+  description:
+    "รวมปฏิทินงานวิ่งทั่วไทย สมัครงานวิ่ง มาราธอน เทรล ฟันรัน ผ่านระบบไอที-รันเวย์",
+};
+
+export default async function Home() {
+  const events = await getEvents();
+  const hero = events
+    .filter((e) => e.category === "hero")
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const newEvents = events
+    .filter((e) => e.category === "new")
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const popular = events
+    .filter((e) => e.category === "popular")
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const reco = events.find((e) => e.category === "recommend");
+  const others = events
+    .filter((e) => e.category === "others")
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+  const register = events
+    .filter((e) => e.category === "register")
+    .sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0));
+
+  const showNew = newEvents.length > 0;
+  const showPopular = popular.length > 0;
+  const showReco = Boolean(reco);
+  const showOthers = others.length > 0;
+  const showRegister = register.length > 0;
+  const showTop = showNew || showPopular;
+  const showMid = showReco || showOthers;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <>
+      {hero.length > 0 && <Carousel slides={hero} variant="poster" />}
+
+      {showTop && (
+        <section className="row" aria-labelledby="hNew">
+          <div className={showNew && showPopular ? "wrap two-col" : "wrap"}>
+            {showNew && (
+              <div className="col">
+                <Reveal as="header" className="sec-head">
+                  <span className="sec-km" aria-hidden="true">
+                    2K
+                  </span>
+                  <h2 id="hNew" className="sec-title">
+                    รายการวิ่งเปิดใหม่
+                  </h2>
+                  <span className="sec-rule" aria-hidden="true" />
+                </Reveal>
+                <Reveal className="vstack">
+                  {newEvents.map((e) => (
+                    <EventCard key={e.id} event={e} />
+                  ))}
+                </Reveal>
+              </div>
+            )}
+            {showPopular && (
+              <div className="col">
+                <Reveal as="header" className="sec-head">
+                  <h2 id="hPopular" className="sec-title">
+                    รายการวิ่งยอดนิยม
+                  </h2>
+                  <span className="sec-rule" aria-hidden="true" />
+                </Reveal>
+                <Reveal className="vstack">
+                  {popular.map((e) => (
+                    <EventCard key={e.id} event={e} />
+                  ))}
+                </Reveal>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {showMid && (
+        <section className="row row-b" aria-labelledby="hReco">
+          <div className={showReco && showOthers ? "wrap two-col-b" : "wrap"}>
+            {showReco && reco && (
+              <div className="col">
+                <Reveal as="header" className="sec-head">
+                  <span className="sec-km" aria-hidden="true">
+                    4K
+                  </span>
+                  <h2 id="hReco" className="sec-title">
+                    แนะนำเลย
+                  </h2>
+                  <span className="sec-rule" aria-hidden="true" />
+                </Reveal>
+                <Reveal>
+                  <RecoCard event={reco} />
+                </Reveal>
+              </div>
+            )}
+            {showOthers && (
+              <div className="col">
+                <Reveal as="header" className="sec-head">
+                  <h2 id="hOthers" className="sec-title">
+                    รายการอื่น ๆ
+                  </h2>
+                  <span className="sec-rule" aria-hidden="true" />
+                </Reveal>
+                <Reveal className="mini-grid">
+                  {others.map((e) => (
+                    <MiniCard key={e.id} event={e} />
+                  ))}
+                </Reveal>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {showRegister && (
+        <section className="row" aria-labelledby="hOpen">
+          <div className="wrap">
+            <Reveal as="header" className="sec-head">
+              <span className="sec-km" aria-hidden="true">
+                6K
+              </span>
+              <h2 id="hOpen" className="sec-title">
+                งานที่เปิดรับสมัครผ่านรันลา
+              </h2>
+              <span className="sec-rule" aria-hidden="true" />
+            </Reveal>
+            <Reveal className="reg-grid">
+              {register.map((e) => (
+                <RegCard key={e.id} event={e} />
+              ))}
+            </Reveal>
+            <div className="center">
+              <Reveal>
+                <a className="btn btn-ghost" href="#">
+                  ดูกิจกรรมอื่นๆ ทั้งหมด…
+                </a>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+      )}
+    </>
   );
 }
