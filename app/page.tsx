@@ -352,8 +352,8 @@ export default function Home() {
               <div className="mt-[var(--space-l)] grid grid-cols-3 gap-[var(--space-m)] border-t pt-[var(--space-m)]" style={{ borderColor: "var(--line)" }}>
                 {[
                   { to: dbStats.totalEvents || dbEvents.length || 13, suffix: " งาน", label: "งานแข่งขัน", sub: "ในระบบนครปฐม" },
-                  { to: dbStats.totalRegistrations || 210, suffix: " ครั้ง", label: "ลงทะเบียนแล้ว", sub: "ชิปไทม์มิ่งรับรอง" },
-                  { to: dbStats.totalUsers || 17, suffix: " ท่าน", label: "นักวิ่งในระบบ", sub: "บัญชีนักวิ่งจริง" },
+                  { to: dbStats.totalRegistrations || 210, suffix: " ครั้ง", label: "นักวิ่งลงทะเบียนแล้ว", sub: "อัปเดตแบบเรียลไทม์ • ชิปไทม์" },
+                  { to: dbStats.totalUsers || 17, suffix: " ท่าน", label: "นักวิ่งในระบบ", sub: "ใช้จาก Profile จาก Users จริง" },
                 ].map((s) => (
                   <div key={s.label}>
                     <div className="numeric font-[var(--font-bib)] font-extrabold tracking-[-0.03em] text-[var(--ink)]" style={{ fontSize: "var(--step-4)", lineHeight: 1 }}>
