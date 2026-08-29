@@ -1,26 +1,118 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--base);
+  --color-foreground: var(--ink);
+  --font-display: var(--font-display);
+  --font-text: var(--font-text);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ===== TOKEN BLOCK — Timing Gate Brutalist (Brutalist Raw × Terminal Phosphor) =====
+   Every number in the UI must trace back to here. No arbitrary px.
+*/
+:root {
+  /* TYPE — ratio 1.333 Perfect Fourth (marketing/sports), base 1rem */
+  --font-display: "Chakra Petch", "Barlow Condensed", sans-serif;
+  --font-text: "IBM Plex Sans Thai Looped", "Sora", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono Thai Looped", ui-monospace, monospace;
+  --font-bib: "Barlow Condensed", "Chakra Petch", sans-serif;
+
+  --step--2: clamp(0.64rem, 0.62rem + 0.1vw, 0.69rem);
+  --step--1: clamp(0.83rem, 0.80rem + 0.15vw, 0.90rem);
+  --step-0: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  --step-1: clamp(1.20rem, 1.10rem + 0.5vw, 1.44rem);
+  --step-2: clamp(1.44rem, 1.28rem + 0.8vw, 1.92rem);
+  --step-3: clamp(1.73rem, 1.48rem + 1.25vw, 2.56rem);
+  --step-4: clamp(2.07rem, 1.70rem + 1.85vw, 3.41rem);
+  --step-5: clamp(2.49rem, 1.95rem + 2.7vw, 4.55rem);
+  --step-6: clamp(2.99rem, 2.20rem + 3.95vw, 6.07rem);
+  --step-7: clamp(3.58rem, 2.45rem + 5.65vw, 8.09rem);
+
+  /* SPACE — 8px base (0.5rem) multiples only */
+  --space-3xs: 0.25rem; /* 4px */
+  --space-2xs: 0.5rem;  /* 8px */
+  --space-xs: 0.75rem;  /* 12px */
+  --space-s: 1rem;      /* 16px */
+  --space-m: 1.5rem;    /* 24px */
+  --space-l: 2rem;      /* 32px */
+  --space-xl: 3rem;     /* 48px */
+  --space-2xl: 4.5rem;  /* 72px */
+  --space-3xl: 7rem;    /* 112px */
+
+  /* COLOR — ramp, not one-offs. Base tinted warm toward accent */
+  --base: oklch(0.145 0.008 85);        /* #0A0A0B near-black warm */
+  --surface: oklch(0.21 0.006 85);      /* #1A1A1E raised */
+  --surface-2: oklch(0.25 0.006 85);    /* #27272A nested/hover */
+  --line: oklch(0.27 0.006 85);         /* #2E2E32 borders */
+  --ink: oklch(0.97 0.005 85);          /* #F5F5F0 primary */
+  --ink-2: oklch(0.72 0.008 85);        /* #A8A6A0 secondary */
+  --ink-3: oklch(0.58 0.008 85);        /* #7C7C78 tertiary */
+  --accent: oklch(0.88 0.17 95);        /* #FACC15 safety yellow */
+  --accent-ink: oklch(0.145 0.008 85);  /* text on accent */
+  --accent-glow: oklch(0.88 0.17 95 / 0.18);
+  --positive: oklch(0.72 0.16 145);     /* chip timing green only */
+
+  /* FORM — ONE RADIUS ONLY (Brutalist: commit to 12px) */
+  --radius: 12px;
+  --border: 1px solid var(--line);
+  --border-accent: 1px solid var(--accent);
+
+  /* SHADOW — two only: near + far, tinted warm, never gray blur mush */
+  --shadow-near: 0 1px 0 oklch(0 0 0 / 0.6), 0 1px 2px oklch(0 0 0 / 0.5);
+  --shadow-far: 0 8px 24px oklch(0 0 0 / 0.45), 0 16px 48px oklch(0 0 0 / 0.35);
+
+  /* MOTION — 3 durations, 2 easings */
+  --dur-fast: 120ms;
+  --dur: 220ms;
+  --dur-slow: 420ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --content-max: 1280px;
+  --line-length: 68ch;
 }
 
+/* Base */
+* { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+html { scrollbar-gutter: stable; }
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--base);
+  color: var(--ink);
+  font-family: var(--font-text);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-wrap: pretty;
 }
+
+/* Focus — never remove, restyle */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Grid — hairline, not decoration */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--line) 28%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--line) 28%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Runway hazard stripe — brutalist signature */
+.runway-stripe {
+  background: repeating-linear-gradient(-45deg, var(--accent) 0 10px, transparent 10px 20px);
+}
+
+/* BIB perforation */
+.bib-perf {
+  background-image: radial-gradient(circle, var(--base) 1.5px, transparent 1.5px);
+  background-size: 8px 8px;
+  background-repeat: repeat-x;
+  background-position: bottom;
+}
+
+/* Tabular numerals — required for time/distance */
+.numeric { font-variant-numeric: tabular-nums lining-nums; font-family: var(--font-mono); }
