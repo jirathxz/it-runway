@@ -755,20 +755,13 @@ function OrganizerCheckInContent() {
                         ค้นหาหรือสแกนเลข BIB / RFID Chip
                       </h3>
                     </div>
-
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => setScannerOpen(true)}
-                      className="h-8 px-3 font-bold text-xs bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Camera className="size-3.5" />
-                      <span>สแกน QR Code</span>
-                    </Button>
+                    <Badge variant="outline" className="text-[10px] font-mono text-[var(--ink-3)]">
+                      LIVE SCAN
+                    </Badge>
                   </div>
 
                   <form onSubmit={handleSearchSubmit} className="space-y-3">
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2.5">
                       <div className="relative flex-1">
                         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--accent)]" />
                         <Input
@@ -776,13 +769,13 @@ function OrganizerCheckInContent() {
                           autoFocus
                           value={searchQuery}
                           onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="พิมพ์หรือสแกน เช่น NP-10K-0088 หรือ RFID..."
-                          className="h-12 pl-10 pr-24 bg-[var(--surface-2)] font-mono text-sm uppercase"
+                          placeholder="ค้นหา BIB, RFID Chip หรือชื่อนักวิ่ง..."
+                          className="h-12 pl-10 pr-24 bg-[var(--surface-2)] font-mono text-xs sm:text-sm uppercase"
                         />
                         <Button
                           type="submit"
                           size="sm"
-                          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 font-bold text-xs"
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-9 font-bold text-xs bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110"
                         >
                           ตรวจ BIB
                         </Button>
@@ -794,23 +787,22 @@ function OrganizerCheckInContent() {
                         className="h-12 px-4 font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm flex items-center justify-center gap-2 shrink-0 cursor-pointer"
                       >
                         <Camera className="size-4" />
-                        <span>สแกน QR</span>
+                        <span>เปิดกล้องสแกน QR</span>
                       </Button>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] font-mono text-[var(--ink-3)]">
-                      <span>รองรับ: เลข BIB, RFID Chip, หรือชื่อนักวิ่ง</span>
+                    <div className="flex items-center justify-between text-[11px] font-mono text-[var(--ink-3)] pt-1">
+                      <span>รองรับ: เลข BIB, RFID Chip Code, หรือชื่อ-นามสกุลนักวิ่ง</span>
                       {searchQuery && (
                         <button
                           type="button"
                           onClick={() => {
                             setSearchQuery("");
                             setScannedRunner(null);
-                            setCheckinMessage(null);
                           }}
-                          className="hover:text-[var(--ink)] cursor-pointer"
+                          className="text-[var(--accent)] hover:underline cursor-pointer"
                         >
-                          ล้างค่า
+                          ล้างการค้นหา
                         </button>
                       )}
                     </div>

@@ -240,14 +240,22 @@ export function NotificationCenterDialog({
           </div>
 
           {/* Test Trigger Simulator Box */}
-          <div className="p-3 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Zap className="size-4 text-[var(--accent)] shrink-0" />
-              <span className="text-xs font-bold text-[var(--ink)]">ทดสอบส่ง 9 Event Triggers:</span>
+          <div className="p-3.5 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+                <Zap className="size-4 text-[var(--accent)] shrink-0" />
+                <span>จำลองการส่งการแจ้งเตือน (9 Event Simulator)</span>
+              </div>
+              <Badge variant="outline" className="text-[10px] font-mono text-[var(--accent)] border-[var(--accent)]/30">
+                4 ช่องทางพร้อมกัน
+              </Badge>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
               <select
                 value={selectedTestEvent}
                 onChange={(e) => setSelectedTestEvent(e.target.value)}
-                className="h-8 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] px-2.5 text-xs font-bold text-[var(--ink)] focus:outline-none cursor-pointer"
+                className="h-9 flex-1 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] px-3 text-xs font-semibold text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] cursor-pointer"
               >
                 {Object.entries(EVENT_TYPE_CONFIG).map(([key, cfg]) => (
                   <option key={key} value={key}>
@@ -255,81 +263,81 @@ export function NotificationCenterDialog({
                   </option>
                 ))}
               </select>
-            </div>
 
-            <Button
-              size="sm"
-              onClick={handleTriggerTest}
-              disabled={triggering}
-              className="h-8 text-xs font-bold gap-1.5 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 shrink-0"
-            >
-              <Send className={`size-3.5 ${triggering ? "animate-spin" : ""}`} />
-              <span>{triggering ? "กำลังส่ง..." : "⚡ ยิงทดสอบ (4 ช่องทาง)"}</span>
-            </Button>
+              <Button
+                size="sm"
+                onClick={handleTriggerTest}
+                disabled={triggering}
+                className="h-9 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 shrink-0"
+              >
+                <Send className={`size-3.5 ${triggering ? "animate-spin" : ""}`} />
+                <span>{triggering ? "กำลังส่ง..." : "⚡ ยิงทดสอบ"}</span>
+              </Button>
+            </div>
           </div>
 
           {triggerSuccess && (
-            <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
-              <CheckCircle2 className="size-3.5" />
+            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="size-4 shrink-0" />
               <span>{triggerSuccess}</span>
             </div>
           )}
 
           {/* Channel Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pt-2 border-t border-[var(--line)]">
+          <div className="flex items-center gap-1 overflow-x-auto pt-2 border-t border-[var(--line)] scrollbar-none">
             <button
               onClick={() => setActiveTab("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "all"
-                  ? "bg-[var(--accent)] text-[var(--accent-ink)]"
-                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs"
+                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
               }`}
             >
               ทั้งหมด ({counts.total})
             </button>
             <button
               onClick={() => setActiveTab("in_app")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 activeTab === "in_app"
-                  ? "bg-[var(--accent)] text-[var(--accent-ink)]"
-                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs"
+                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
               }`}
             >
-              <Bell className="size-3" />
-              In-App ({counts.inApp})
+              <Bell className="size-3.5" />
+              <span>In-App ({counts.inApp})</span>
             </button>
             <button
               onClick={() => setActiveTab("email")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 activeTab === "email"
-                  ? "bg-[var(--accent)] text-[var(--accent-ink)]"
-                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs"
+                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
               }`}
             >
-              <Mail className="size-3" />
-              Email ({counts.email})
+              <Mail className="size-3.5" />
+              <span>Email ({counts.email})</span>
             </button>
             <button
               onClick={() => setActiveTab("sms")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 activeTab === "sms"
-                  ? "bg-[var(--accent)] text-[var(--accent-ink)]"
-                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs"
+                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
               }`}
             >
-              <Smartphone className="size-3" />
-              SMS ({counts.sms})
+              <Smartphone className="size-3.5" />
+              <span>SMS ({counts.sms})</span>
             </button>
             <button
               onClick={() => setActiveTab("push")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono transition-colors cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0 ${
                 activeTab === "push"
-                  ? "bg-[var(--accent)] text-[var(--accent-ink)]"
-                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)]"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-xs"
+                  : "text-[var(--ink-2)] hover:bg-[var(--surface-2)] hover:text-[var(--ink)]"
               }`}
             >
-              <Zap className="size-3" />
-              Web Push ({counts.push})
+              <Zap className="size-3.5" />
+              <span>Web Push ({counts.push})</span>
             </button>
           </div>
         </DialogHeader>

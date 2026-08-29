@@ -145,11 +145,11 @@ export function RfidTimingConsoleDialog({
         <div className="space-y-6 pt-2">
           {/* Active Timing Mats Grid */}
           <div>
-            <div className="text-xs font-mono font-bold text-[var(--ink-2)] mb-2 flex items-center gap-1.5">
+            <div className="text-xs font-mono font-bold text-[var(--ink-2)] mb-2.5 flex items-center gap-1.5">
               <Layers className="size-3.5 text-[var(--accent)]" />
               <span>สถานะพรมจับเวลา (Active RFID Timing Mats)</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5">
               {timingMats.map((mat) => {
                 const isSelected = selectedReader === mat.id;
                 return (
@@ -157,21 +157,21 @@ export function RfidTimingConsoleDialog({
                     key={mat.id}
                     type="button"
                     onClick={() => setSelectedReader(mat.id)}
-                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[90px] ${
                       isSelected
-                        ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-1 ring-[var(--accent)]"
+                        ? "border-[var(--accent)] bg-[var(--accent)]/10 ring-1 ring-[var(--accent)] shadow-xs"
                         : "border-[var(--line)] bg-[var(--surface-2)] hover:border-[var(--ink-3)]"
                     }`}
                   >
-                    <div className="flex items-center justify-between text-[11px] font-mono mb-1">
+                    <div className="flex items-center justify-between text-[11px] font-mono mb-1.5">
                       <span className="font-bold text-[var(--ink)]">{mat.id.replace("READER-", "")}</span>
                       <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold">
                         <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
                         {mat.status}
                       </span>
                     </div>
-                    <div className="text-xs font-bold text-[var(--ink)] truncate">{mat.name}</div>
-                    <div className="text-[10px] font-mono text-[var(--ink-3)] mt-1 flex items-center gap-1">
+                    <div className="text-xs font-semibold text-[var(--ink)] leading-snug">{mat.name}</div>
+                    <div className="text-[10px] font-mono text-[var(--ink-3)] mt-2 flex items-center gap-1">
                       <Wifi className="size-3 text-amber-400" />
                       <span>{mat.freq}</span>
                     </div>
@@ -182,8 +182,8 @@ export function RfidTimingConsoleDialog({
           </div>
 
           {/* Trigger Section */}
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface-2)] p-4 sm:p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
               <div className="flex items-center gap-2">
                 <Zap className="size-4 text-amber-400" />
                 <span className="text-xs font-bold font-mono">จำลองสัญญาณนักวิ่งเหยียบพรม (Simulate Detection Event)</span>
@@ -194,66 +194,68 @@ export function RfidTimingConsoleDialog({
             </div>
 
             {/* 1-Click Quick Triggers */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-mono text-[var(--ink-3)]">นักวิ่งทดสอบ:</span>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={loading}
-                onClick={() => {
-                  setCustomBib("1088");
-                  handleSimulateCrossing("1088");
-                }}
-                className="h-8 text-xs font-mono font-bold cursor-pointer hover:border-[var(--accent)]"
-              >
-                <Sparkles className="size-3 mr-1 text-amber-400" />
-                BIB 1088 (ธนภัทร - 21K)
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={loading}
-                onClick={() => {
-                  setCustomBib("2101");
-                  handleSimulateCrossing("2101");
-                }}
-                className="h-8 text-xs font-mono font-bold cursor-pointer hover:border-[var(--accent)]"
-              >
-                <Sparkles className="size-3 mr-1 text-amber-400" />
-                BIB 2101 (กานดา - 10K)
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={loading}
-                onClick={() => {
-                  setCustomBib("0512");
-                  handleSimulateCrossing("0512");
-                }}
-                className="h-8 text-xs font-mono font-bold cursor-pointer hover:border-[var(--accent)]"
-              >
-                <Sparkles className="size-3 mr-1 text-amber-400" />
-                BIB 0512 (สมชาย - 5K)
-              </Button>
+            <div className="space-y-2">
+              <span className="text-xs font-mono text-[var(--ink-3)]">เลือกนักวิ่งจำลอง:</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={loading}
+                  onClick={() => {
+                    setCustomBib("1088");
+                    handleSimulateCrossing("1088");
+                  }}
+                  className="h-8 px-3 text-xs font-mono font-semibold cursor-pointer hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <Sparkles className="size-3 mr-1 text-amber-400" />
+                  BIB 1088 (ธนภัทร - 21K)
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={loading}
+                  onClick={() => {
+                    setCustomBib("2101");
+                    handleSimulateCrossing("2101");
+                  }}
+                  className="h-8 px-3 text-xs font-mono font-semibold cursor-pointer hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <Sparkles className="size-3 mr-1 text-amber-400" />
+                  BIB 2101 (กานดา - 10K)
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={loading}
+                  onClick={() => {
+                    setCustomBib("0512");
+                    handleSimulateCrossing("0512");
+                  }}
+                  className="h-8 px-3 text-xs font-mono font-semibold cursor-pointer hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                >
+                  <Sparkles className="size-3 mr-1 text-amber-400" />
+                  BIB 0512 (สมชาย - 5K)
+                </Button>
+              </div>
             </div>
 
-            {/* Custom BIB Input */}
-            <div className="flex gap-2">
+            {/* Custom BIB Input & Ingest Trigger */}
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
               <Input
                 placeholder="กรอกหมายเลข BIB (เช่น 1088)"
                 value={customBib}
                 onChange={(e) => setCustomBib(e.target.value)}
-                className="h-9 text-xs font-mono max-w-[200px] bg-[var(--surface)] border-[var(--line)]"
+                className="h-10 text-xs font-mono sm:max-w-[240px] bg-[var(--surface)] border-[var(--line)]"
               />
               <Button
                 type="button"
                 size="sm"
                 disabled={loading || !customBib}
                 onClick={() => handleSimulateCrossing(customBib)}
-                className="h-9 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer shadow-sm"
+                className="h-10 px-5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 cursor-pointer shadow-sm shrink-0"
               >
                 {loading ? (
                   <>
