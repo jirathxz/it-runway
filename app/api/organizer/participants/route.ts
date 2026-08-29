@@ -1,25 +1,26 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events, registrations, user } from "@/lib/schema";
 import { eq, desc } from "drizzle-orm";
+import { apiSuccess, apiError } from "@/lib/api-response";
+import { recordAuditLog } from "@/lib/audit-logger";
 
 export async function GET(req: NextRequest) {
   try {
+    const reqHeaders = await headers();
     const session = await auth.api.getSession({
-      headers: await headers(),
+      headers: reqHeaders,
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "กรุณาเข้าสู่ระบบก่อนเข้าถึงข้อมูลนักวิ่ง" },
-        { status: 401 }
-      );
+      return apiError("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนเข้าถึงข้อมูลนักวิ่ง", 401);
     }
 
     const { searchParams } = new URL(req.url);
     const eventId = searchParams.get("eventId");
+    const includeFullMedical = searchParams.get("includeMedical") === "true";
 
     const isAdmin = (session.user as any)?.role === "admin";
 
@@ -28,24 +29,20 @@ export async function GET(req: NextRequest) {
     const accessibleEvents = isAdmin
       ? allEvents
       : allEvents.filter(
-          (ev) => ev.organizerId === session.user.id && ev.approvalStatus === "approved"
+          (ev) =>
+            ev.organizerId === session.user.id &&
+            (ev.approvalStatus === "approved" || ev.approvalStatus === "APPROVED")
         );
 
     if (accessibleEvents.length === 0) {
-      return NextResponse.json(
-        { error: "คุณไม่มีสิทธิ์ในการจัดการงานวิ่งนี้" },
-        { status: 403 }
-      );
+      return apiError("FORBIDDEN", "คุณไม่มีสิทธิ์ในการจัดการงานวิ่งนี้", 403);
     }
 
     const targetEventId = eventId || accessibleEvents[0].id;
     const targetEvent = accessibleEvents.find((e) => e.id === targetEventId);
 
     if (!targetEvent && !isAdmin) {
-      return NextResponse.json(
-        { error: "ไม่พบงานวิ่งที่ระบุหรือไม่มีสิทธิ์เข้าถึง" },
-        { status: 403 }
-      );
+      return apiError("FORBIDDEN", "ไม่พบงานวิ่งที่ระบุหรือไม่มีสิทธิ์เข้าถึง", 403);
     }
 
     // Query registrations for targetEventId
@@ -59,6 +56,8 @@ export async function GET(req: NextRequest) {
         distance: registrations.distance,
         tshirtSize: registrations.tshirtSize,
         status: registrations.status,
+        registrationStatus: registrations.registrationStatus,
+        ageGroup: registrations.ageGroup,
         chipCode: registrations.chipCode,
         shippingStatus: registrations.shippingStatus,
         trackingNumber: registrations.trackingNumber,
@@ -72,20 +71,86 @@ export async function GET(req: NextRequest) {
         gender: user.gender,
         emergencyName: user.emergencyName,
         emergencyPhone: user.emergencyPhone,
+        rawMedicalConditions: user.medicalConditions,
+        bloodType: user.bloodType,
       })
       .from(registrations)
       .leftJoin(user, eq(registrations.userId, user.id))
       .where(eq(registrations.eventId, targetEventId as any))
       .orderBy(desc(registrations.registeredAt));
 
-    const totalCount = regRows.length;
-    const checkedInCount = regRows.filter((r) => r.checkedIn === "yes").length;
+    // PDPA: Data Minimization & Privacy Protection
+    // Medical conditions are protected by default - only send boolean flag unless authorized
+    const sanitizedParticipants = regRows.map((r) => {
+      const hasMedical = Boolean(
+        r.rawMedicalConditions &&
+        r.rawMedicalConditions.trim() !== "" &&
+        r.rawMedicalConditions !== "ไม่มีโรคประจำตัว"
+      );
+
+      return {
+        id: r.id,
+        userId: r.userId,
+        eventId: r.eventId,
+        bibNumber: r.bibNumber,
+        corral: r.corral,
+        distance: r.distance,
+        tshirtSize: r.tshirtSize,
+        status: r.status,
+        registrationStatus: r.registrationStatus || "UPCOMING",
+        ageGroup: r.ageGroup || "30-39",
+        chipCode: r.chipCode,
+        shippingStatus: r.shippingStatus,
+        trackingNumber: r.trackingNumber,
+        checkedIn: r.checkedIn,
+        checkedInAt: r.checkedInAt,
+        registeredAt: r.registeredAt,
+        userName: r.userName || "นักวิ่ง",
+        userEmail: r.userEmail,
+        userImage: r.userImage,
+        userPhone: r.userPhone,
+        gender: r.gender,
+        emergencyName: r.emergencyName,
+        emergencyPhone: r.emergencyPhone,
+        bloodType: r.bloodType,
+        hasMedicalAlert: hasMedical,
+        // Only provide plain text medical details if explicitly authorized and logged
+        medicalConditions: includeFullMedical && (isAdmin || targetEvent?.organizerId === session.user.id)
+          ? r.rawMedicalConditions
+          : hasMedical
+          ? "มีข้อมูลความเสี่ยงทางการแพทย์ (เข้าถึงได้เฉพาะทีมปฐมพยาบาล)"
+          : "ไม่มีโรคประจำตัว",
+      };
+    });
+
+    if (includeFullMedical) {
+      const ip =
+        reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        reqHeaders.get("x-real-ip") ||
+        "127.0.0.1";
+      const userAgent = reqHeaders.get("user-agent") || "Unknown";
+
+      await recordAuditLog({
+        userId: session.user.id,
+        userName: session.user.name,
+        userRole: isAdmin ? "admin" : "organizer",
+        action: "MEDICAL_RECORD_ACCESSED",
+        entityType: "medical_record",
+        entityId: targetEventId,
+        details: { eventTitle: targetEvent?.title, count: regRows.length },
+        ipAddress: ip,
+        userAgent: userAgent,
+      });
+    }
+
+    const totalCount = sanitizedParticipants.length;
+    const checkedInCount = sanitizedParticipants.filter((r) => r.checkedIn === "yes").length;
     const pendingCount = totalCount - checkedInCount;
 
-    return NextResponse.json({
+    return apiSuccess({
       event: targetEvent,
       accessibleEvents,
-      participants: regRows,
+      participants: sanitizedParticipants,
       stats: {
         total: totalCount,
         checkedIn: checkedInCount,
@@ -95,9 +160,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("Failed to get organizer participants:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to load participants" },
-      { status: 500 }
-    );
+    return apiError("INTERNAL_SERVER_ERROR", error.message || "Failed to load participants", 500);
   }
 }

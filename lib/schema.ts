@@ -438,14 +438,19 @@ export const notifications = pgTable("notifications", {
   sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// 28. audit_logs
+// 28. audit_logs (Complete Audit Trail: WHO, WHAT, WHEN, FROM, TO, IP, USER AGENT)
 export const auditLogs = pgTable("audit_logs", {
   id: uuid("id").primaryKey().defaultRandom(),
-  userId: text("user_id").references(() => user.id),
-  action: text("action").notNull(), // CHECKIN, TRANSFER_BIB, CANCEL_REGISTRATION, APPROVE_EVENT, UPDATE_TRACKING
-  entityType: text("entity_type").notNull(), // registration, event, user
+  userId: text("user_id").references(() => user.id), // WHO
+  userName: text("user_name"), // e.g. "admin-runway", "user-runway"
+  userRole: text("user_role").default("user"), // admin, organizer, user
+  action: text("action").notNull(), // WHAT: ADMIN_APPROVE_EVENT, ADMIN_CANCEL_REGISTRATION, ORGANIZER_CHECKIN, ADMIN_CHANGE_USER_ROLE, BIB_TRANSFER, REFUND_APPROVED, MEDICAL_RECORD_ACCESSED
+  entityType: text("entity_type").notNull(), // event, registration, user, medical_record
   entityId: text("entity_id").notNull(),
+  fromState: text("from_state"), // FROM: e.g. "pending", "CORRAL A", "upcoming"
+  toState: text("to_state"), // TO: e.g. "approved", "checked_in", "transferred"
+  ipAddress: text("ip_address"), // IP
+  userAgent: text("user_agent"), // USER AGENT
   details: text("details"),
-  ipAddress: text("ip_address"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(), // WHEN
 });

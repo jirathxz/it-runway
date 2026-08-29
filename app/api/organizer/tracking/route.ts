@@ -1,31 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registrations, events } from "@/lib/schema";
 import { eq } from "drizzle-orm";
+import { apiSuccess, apiError } from "@/lib/api-response";
+import { recordAuditLog } from "@/lib/audit-logger";
 
 export async function POST(req: NextRequest) {
   try {
+    const reqHeaders = await headers();
     const session = await auth.api.getSession({
-      headers: await headers(),
+      headers: reqHeaders,
     });
 
     if (!session?.user) {
-      return NextResponse.json(
-        { error: "กรุณาเข้าสู่ระบบก่อนดำเนินการ" },
-        { status: 401 }
-      );
+      return apiError("UNAUTHORIZED", "กรุณาเข้าสู่ระบบก่อนดำเนินการ", 401);
     }
+
+    const ip =
+      reqHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      reqHeaders.get("x-real-ip") ||
+      "127.0.0.1";
+    const userAgent = reqHeaders.get("user-agent") || "Unknown";
 
     const body = await req.json();
     const { registrationId, trackingNumber, shippingStatus } = body;
 
     if (!registrationId) {
-      return NextResponse.json(
-        { error: "ข้อมูลไม่ครบถ้วน (registrationId required)" },
-        { status: 400 }
-      );
+      return apiError("VALIDATION_ERROR", "ข้อมูลไม่ครบถ้วน (registrationId required)", 400);
     }
 
     // Verify registration exists
@@ -36,10 +39,7 @@ export async function POST(req: NextRequest) {
       .limit(1);
 
     if (regList.length === 0) {
-      return NextResponse.json(
-        { error: "ไม่พบข้อมูลการลงทะเบียน" },
-        { status: 404 }
-      );
+      return apiError("REGISTRATION_NOT_FOUND", "ไม่พบข้อมูลการลงทะเบียน", 404);
     }
 
     const reg = regList[0];
@@ -54,33 +54,43 @@ export async function POST(req: NextRequest) {
         .limit(1);
 
       if (eventList.length === 0 || eventList[0].organizerId !== session.user.id) {
-        return NextResponse.json(
-          { error: "คุณไม่มีสิทธิ์แก้ไขข้อมูลการจัดส่งของงานนี้" },
-          { status: 403 }
-        );
+        return apiError("FORBIDDEN", "คุณไม่มีสิทธิ์แก้ไขข้อมูลการจัดส่งของงานนี้", 403);
       }
     }
+
+    const targetShippingStatus = shippingStatus || (trackingNumber ? "delivered" : reg.shippingStatus);
 
     // Update tracking number and shipping status
     await db
       .update(registrations)
       .set({
         trackingNumber: trackingNumber || null,
-        shippingStatus: shippingStatus || (trackingNumber ? "delivered" : reg.shippingStatus),
+        shippingStatus: targetShippingStatus,
       })
       .where(eq(registrations.id, registrationId));
 
-    return NextResponse.json({
-      success: true,
+    // Audit log
+    await recordAuditLog({
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: isAdmin ? "admin" : "organizer",
+      action: "ORGANIZER_CHECKIN",
+      entityType: "registration",
+      entityId: registrationId,
+      fromState: `tracking: ${reg.trackingNumber || "none"}`,
+      toState: `tracking: ${trackingNumber || "none"}`,
+      ipAddress: ip,
+      userAgent: userAgent,
+      details: { bibNumber: reg.bibNumber, trackingNumber, shippingStatus: targetShippingStatus },
+    });
+
+    return apiSuccess({
       message: "อัปเดตหมายเลขพัสดุเรียบร้อยแล้ว",
       trackingNumber,
-      shippingStatus: shippingStatus || (trackingNumber ? "delivered" : reg.shippingStatus),
+      shippingStatus: targetShippingStatus,
     });
   } catch (error: any) {
     console.error("Failed to update tracking number:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to update tracking number" },
-      { status: 500 }
-    );
+    return apiError("INTERNAL_SERVER_ERROR", error.message || "Failed to update tracking number", 500);
   }
 }

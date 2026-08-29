@@ -35,11 +35,18 @@ import {
   Download,
   Truck,
   Radio,
+  Wifi,
+  WifiOff,
+  Database,
+  RefreshCw,
+  HardDriveDownload,
+  CloudUpload,
 } from "lucide-react";
 import { QrScannerDialog } from "@/components/organizer/qr-scanner-dialog";
 import { ShirtBreakdownDialog } from "@/components/organizer/shirt-breakdown-dialog";
 import { TrackingManagerDialog } from "@/components/organizer/tracking-manager-dialog";
 import { RfidTimingConsoleDialog } from "@/components/organizer/rfid-timing-console-dialog";
+import { offlineDb } from "@/lib/offline-checkin-db";
 
 function OrganizerCheckInContent() {
   const searchParams = useSearchParams();
@@ -67,6 +74,18 @@ function OrganizerCheckInContent() {
     text: string;
   } | null>(null);
   const [processing, setProcessing] = React.useState(false);
+
+  // Offline Engine State
+  const [isOnline, setIsOnline] = React.useState<boolean>(true);
+  const [offlineMode, setOfflineMode] = React.useState<boolean>(false);
+  const [downloadingOffline, setDownloadingOffline] = React.useState<boolean>(false);
+  const [syncingOffline, setSyncingOffline] = React.useState<boolean>(false);
+  const [offlineStats, setOfflineStats] = React.useState<{
+    totalCached: number;
+    checkedInOffline: number;
+    pendingSyncCount: number;
+    lastSyncInfo: any;
+  }>({ totalCached: 0, checkedInOffline: 0, pendingSyncCount: 0, lastSyncInfo: null });
 
   // Table filter
   const [tableFilter, setTableFilter] = React.useState<"all" | "checked" | "pending">("all");
@@ -135,6 +154,101 @@ function OrganizerCheckInContent() {
     document.body.removeChild(link);
   };
 
+  // Refresh offline stats from IndexedDB
+  const refreshOfflineStats = React.useCallback(async () => {
+    try {
+      const s = await offlineDb.getStats();
+      setOfflineStats(s);
+    } catch (e) {
+      console.error("Offline stats error:", e);
+    }
+  }, []);
+
+  // Sync Offline Mutations to Server
+  const handleSyncOfflineQueue = React.useCallback(async () => {
+    try {
+      setSyncingOffline(true);
+      const pendingItems = await offlineDb.getPendingSyncItems();
+      if (pendingItems.length === 0) {
+        setSyncingOffline(false);
+        return;
+      }
+
+      const res = await fetch("/api/organizer/checkin/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: selectedEventId,
+          items: pendingItems,
+        }),
+      });
+
+      const json = await res.json();
+      const payload = json.data || json;
+
+      if (!res.ok) {
+        throw new Error(json.error?.message || "ซิงค์ไม่สำเร็จ");
+      }
+
+      const itemIds = pendingItems.map((i) => i.id!).filter(Boolean);
+      await offlineDb.markSynced(itemIds);
+      await refreshOfflineStats();
+      setCheckinMessage({
+        type: "success",
+        text: `ซิงค์ข้อมูลสำเร็จ: อัปเดต ${payload.syncedCount || 0} รายการ, รายการซ้ำ ${payload.duplicateCount || 0} รายการ`,
+      });
+    } catch (err: any) {
+      console.error("Sync error:", err);
+      setCheckinMessage({
+        type: "error",
+        text: `เกิดข้อผิดพลาดในการซิงค์: ${err.message}`,
+      });
+    } finally {
+      setSyncingOffline(false);
+    }
+  }, [selectedEventId, refreshOfflineStats]);
+
+  // Network listener & auto sync
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+      const handleOnline = () => {
+        setIsOnline(true);
+        handleSyncOfflineQueue();
+      };
+      const handleOffline = () => setIsOnline(false);
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+      refreshOfflineStats();
+
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      };
+    }
+  }, [refreshOfflineStats, handleSyncOfflineQueue]);
+
+  // Download complete roster to Local IndexedDB
+  const handleDownloadOfflineRoster = async () => {
+    if (!selectedEventId) return;
+    try {
+      setDownloadingOffline(true);
+      const selectedEvent = events.find((e) => e.id === selectedEventId) || events[0];
+      const res = await fetch(`/api/organizer/participants?eventId=${selectedEventId}`);
+      const json = await res.json();
+      const payload = json.data || json;
+      const rosterList = payload.participants || [];
+
+      await offlineDb.saveRoster(selectedEventId, selectedEvent?.title || "งานวิ่ง", rosterList);
+      await refreshOfflineStats();
+      alert(`โหลดข้อมูลนักวิ่ง ${rosterList.length} คนลงในเบราว์เซอร์สำเร็จแล้ว! ตอนนี้คุณสามารถตรวจ BIB ออฟไลน์ได้ทันที`);
+    } catch (err: any) {
+      alert("เกิดข้อผิดพลาดในการโหลดข้อมูลออฟไลน์: " + err.message);
+    } finally {
+      setDownloadingOffline(false);
+    }
+  };
+
   // Load participants and organized events
   const loadEventData = React.useCallback(async (eventId?: string) => {
     try {
@@ -145,18 +259,19 @@ function OrganizerCheckInContent() {
         : "/api/organizer/participants";
 
       const res = await fetch(url);
-      const data = await res.json();
+      const json = await res.json();
+      const payload = json.data || json;
 
       if (!res.ok) {
-        throw new Error(data.error || "ไม่สามารถโหลดข้อมูลงานวิ่งได้");
+        throw new Error(json.error?.message || payload.error || "ไม่สามารถโหลดข้อมูลงานวิ่งได้");
       }
 
-      setEvents(data.accessibleEvents || []);
-      if (data.event) {
-        setSelectedEventId(data.event.id);
+      setEvents(payload.accessibleEvents || []);
+      if (payload.event) {
+        setSelectedEventId(payload.event.id);
       }
-      setParticipants(data.participants || []);
-      setStats(data.stats || { total: 0, checkedIn: 0, pending: 0, percent: 0 });
+      setParticipants(payload.participants || []);
+      setStats(payload.stats || { total: 0, checkedIn: 0, pending: 0, percent: 0 });
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล");
     } finally {
@@ -175,6 +290,45 @@ function OrganizerCheckInContent() {
     setProcessing(true);
     setCheckinMessage(null);
 
+    // Fallback or Active Offline Mode Check-in
+    if (!isOnline || offlineMode) {
+      try {
+        if (action === "checkin") {
+          const offRes = await offlineDb.checkinOffline(runner.bibNumber);
+          if (offRes.success) {
+            setCheckinMessage({
+              type: "success",
+              text: `⚡ [โหมดออฟไลน์] เช็คอิน BIB ${runner.bibNumber} สำเร็จแล้ว (บันทึกในเครื่อง รอซิงค์)`,
+            });
+            setParticipants((prev) =>
+              prev.map((p) =>
+                p.bibNumber === runner.bibNumber
+                  ? { ...p, checkedIn: "yes", checkedInAt: new Date().toISOString() }
+                  : p
+              )
+            );
+            setScannedRunner((prev: any) =>
+              prev && prev.id === runner.id
+                ? { ...prev, checkedIn: "yes", checkedInAt: new Date().toISOString() }
+                : prev
+            );
+            await refreshOfflineStats();
+            return;
+          } else {
+            throw new Error(offRes.error || "เช็คอินออฟไลน์ไม่สำเร็จ");
+          }
+        }
+      } catch (err: any) {
+        setCheckinMessage({
+          type: "error",
+          text: err.message,
+        });
+      } finally {
+        setProcessing(false);
+      }
+      return;
+    }
+
     try {
       const res = await fetch("/api/organizer/checkin", {
         method: "POST",
@@ -186,15 +340,16 @@ function OrganizerCheckInContent() {
         }),
       });
 
-      const data = await res.json();
+      const json = await res.json();
+      const payload = json.data || json;
 
       if (!res.ok) {
-        throw new Error(data.error || "เกิดข้อผิดพลาดในการเช็คอิน");
+        throw new Error(json.error?.message || payload.error || "เกิดข้อผิดพลาดในการเช็คอิน");
       }
 
       setCheckinMessage({
         type: "success",
-        text: data.message,
+        text: payload.message || "เช็คอินสำเร็จ",
       });
 
       // Update scanned runner state
@@ -221,10 +376,10 @@ function OrganizerCheckInContent() {
   };
 
   // Handle QR Scan Detection
-  const handleQrScan = (codeText: string) => {
+  const handleQrScan = async (codeText: string) => {
     setSearchQuery(codeText);
     const q = codeText.trim().toLowerCase();
-    const found = participants.find(
+    let found = participants.find(
       (p) =>
         p.bibNumber.toLowerCase() === q ||
         p.chipCode.toLowerCase() === q ||
@@ -232,6 +387,17 @@ function OrganizerCheckInContent() {
         (p.userName && p.userName.toLowerCase().includes(q)) ||
         (p.userEmail && p.userEmail.toLowerCase().includes(q))
     );
+
+    if (!found) {
+      try {
+        const offParticipant = await offlineDb.findParticipant(codeText);
+        if (offParticipant) {
+          found = offParticipant;
+        }
+      } catch (e) {
+        console.error("Offline lookup error:", e);
+      }
+    }
 
     if (found) {
       setScannedRunner(found);
@@ -246,18 +412,29 @@ function OrganizerCheckInContent() {
   };
 
   // Search or Scan Runner
-  const handleSearchSubmit = (e: React.FormEvent) => {
+  const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
 
     const q = searchQuery.trim().toLowerCase();
-    const found = participants.find(
+    let found = participants.find(
       (p) =>
         p.bibNumber.toLowerCase() === q ||
         p.chipCode.toLowerCase() === q ||
         (p.userName && p.userName.toLowerCase().includes(q)) ||
         (p.userEmail && p.userEmail.toLowerCase().includes(q))
     );
+
+    if (!found) {
+      try {
+        const offParticipant = await offlineDb.findParticipant(searchQuery);
+        if (offParticipant) {
+          found = offParticipant;
+        }
+      } catch (e) {
+        console.error("Offline lookup error:", e);
+      }
+    }
 
     if (found) {
       setScannedRunner(found);
@@ -354,6 +531,100 @@ function OrganizerCheckInContent() {
           </div>
         ) : (
           <div className="space-y-8">
+            {/* Offline Check-in & Network Resilience Banner */}
+            <div className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+              !isOnline || offlineMode
+                ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                : "border-emerald-500/20 bg-emerald-500/5 text-emerald-300"
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`size-9 rounded-xl flex items-center justify-center shrink-0 ${
+                  !isOnline || offlineMode ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400"
+                }`}>
+                  {!isOnline ? (
+                    <WifiOff className="size-5" />
+                  ) : offlineMode ? (
+                    <Database className="size-5 text-amber-400" />
+                  ) : (
+                    <Wifi className="size-5" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-[var(--ink)]">
+                      {!isOnline
+                        ? "สถานะ: ออฟไลน์ (ไม่มีอินเทอร์เน็ต)"
+                        : offlineMode
+                        ? "สถานะ: โหมดออฟไลน์จำลอง (IndexedDB Active)"
+                        : "สถานะ: ออนไลน์พร้อมใช้งาน (เชื่อมต่อ Database)"}
+                    </span>
+                    <Badge
+                      variant="outline"
+                      className={`text-[10px] font-mono font-bold ${
+                        !isOnline || offlineMode
+                          ? "border-amber-500/40 text-amber-400 bg-amber-500/10"
+                          : "border-emerald-500/40 text-emerald-400 bg-emerald-500/10"
+                      }`}
+                    >
+                      {!isOnline || offlineMode ? "LOCAL STORAGE" : "LIVE CLOUD"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-[var(--ink-2)] mt-0.5">
+                    แคชในเครื่อง: <strong className="text-[var(--ink)]">{offlineStats.totalCached}</strong> คน | 
+                    เช็คอินออฟไลน์: <strong className="text-amber-400">{offlineStats.checkedInOffline}</strong> คน | 
+                    คอยซิงค์: <strong className="text-rose-400">{offlineStats.pendingSyncCount}</strong> รายการ
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Download Offline Roster Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadOfflineRoster}
+                  disabled={downloadingOffline || !selectedEventId}
+                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer bg-[var(--surface-2)]"
+                >
+                  <HardDriveDownload className={`size-3.5 ${downloadingOffline ? "animate-bounce" : "text-blue-400"}`} />
+                  <span>{downloadingOffline ? "กำลังโหลดข้อมูล..." : "ดาวน์โหลด Roster ลงเครื่อง (Offline Cache)"}</span>
+                </Button>
+
+                {/* Sync Offline Queue Button */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSyncOfflineQueue}
+                  disabled={syncingOffline || offlineStats.pendingSyncCount === 0 || !isOnline}
+                  className={`h-8 text-xs font-bold gap-1.5 cursor-pointer ${
+                    offlineStats.pendingSyncCount > 0
+                      ? "border-amber-500 text-amber-400 bg-amber-500/20 hover:bg-amber-500/30 animate-pulse"
+                      : "opacity-70"
+                  }`}
+                >
+                  <CloudUpload className={`size-3.5 ${syncingOffline ? "animate-spin" : ""}`} />
+                  <span>
+                    {syncingOffline
+                      ? "กำลังซิงค์..."
+                      : `ซิงค์ข้อมูล (${offlineStats.pendingSyncCount} รายการค้าง)`}
+                  </span>
+                </Button>
+
+                {/* Toggle Simulated Offline Mode */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setOfflineMode(!offlineMode)}
+                  className="h-8 text-xs font-mono text-[var(--ink-3)] hover:text-[var(--ink)] cursor-pointer"
+                >
+                  {offlineMode ? "สลับเป็น Online" : "ทดสอบ Offline"}
+                </Button>
+              </div>
+            </div>
+
             {/* Quick Organizer Tools Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-sm">
               <div className="flex items-center gap-2">

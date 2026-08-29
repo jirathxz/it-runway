@@ -554,20 +554,162 @@ stateDiagram-v2
 
 ---
 
-## 3. ระบบหลักทั้งหมดของแพลตฟอร์ม
+## 5. นโยบายความปลอดภัยข้อมูลส่วนบุคคล (PDPA & Privacy Protection Architecture)
 
-1. **ระบบค้นหาและสำรวจงานวิ่ง ([`/events`](https://it-runway.vercel.app/events) & [`/calendar`](https://it-runway.vercel.app/calendar))**: ค้นหา Autocomplete, กรองระยะทาง (5K, 10K, 21K, 42K, Trail), กรองสถานะ/ราคา, พร้อมกล่องค้นหาด่วน `⌘K`
-2. **ระบบรายละเอียดงานวิ่ง ([`/events/[id]`](https://it-runway.vercel.app/events))**: ภาพแบนเนอร์คมชัดสูง, แผนที่เส้นทาง, จุดให้น้ำ, ตารางไซส์เสื้อ, กำหนดการวันงาน
-3. **ระบบตรวจสอบความสมบูรณ์ของข้อมูลนักวิ่ง**: ตรวจสอบ 7 ฟิลด์จำเป็นก่อนชำระเงิน หากไม่ครบจะบล็อกการสมัคร พร้อมปุ่ม **"⚡ กรอก Demo ทั้งหมด & ปลดล็อก"** และปุ่ม `⚡ Demo` ประจำทุกช่อง
-4. **ระบบจำลองการชำระเงิน (Payment Gateway Simulation)**: รองรับ PromptPay QR, บัตรเครดิต, Mobile Banking (K PLUS, SCB, KTB), และ TrueMoney Wallet พร้อมจำลองขั้นตอนเชื่อมต่อธนาคาร
-5. **ระบบบัตร BIB ดิจิทัลและการยกเลิก ([`/account/bibs`](https://it-runway.vercel.app/account/bibs))**: บัตร BIB บาร์โค้ด + ชิป RFID, ปุ่มดาวน์โหลดรูป PNG, สั่งพิมพ์ Print, และระบบขอยกเลิกงาน/คืนเงิน
-6. **ระบบโอนสิทธิ์ BIB ให้เพื่อน**: โอนสิทธิ์เบอร์วิ่งให้นักวิ่งท่านอื่น พร้อมปุ่ม Demo ผู้รับสิทธิ์ และออกรหัสชิป RFID ใหม่ให้อัตโนมัติ
-7. **ระบบขอจัดงานวิ่งสำหรับสมาชิก ([`/organize`](https://it-runway.vercel.app/organize))**: ยื่นคำขอจัดงานวิ่งใหม่ พร้อมปุ่ม Demo 1-Click และส่งเข้าสู่ระบบรอการตรวจสอบของ Admin
-8. **ระบบแถบตรวจ BIB และสแกน QR Code ([`/organizer/checkin`](https://it-runway.vercel.app/organizer/checkin))**: กล้องสแกน QR Code สด, เส้นเลเซอร์, เสียงปี๊บ (Web Audio API), ระบบสั่น, อัปโหลดภาพ QR, และสถิติ % การเช็คอิน
-9. **ระบบจัดการข้อมูลผู้จัดงาน**: Export รายชื่อเป็น Excel/CSV (UTF-8 BOM ภาษาไทยสมบูรณ์), สรุปยอดตัดเย็บเสื้อ XS–3XL, จัดการและสุ่มเลขพัสดุไปรษณีย์
-10. **ระบบผลการแข่งขัน เกียรติบัตร และภาพถ่าย ([`/results`](https://it-runway.vercel.app/results))**: รายงานผล Chip/Gun Time, อันดับ Overall/รุ่นอายุ, ออก e-Certificate สีทอง 1600x1130 px, และระบบค้นหาภาพถ่ายนักวิ่งตามเลข BIB พร้อมตัวกรองจุดเช็คพอยต์ 5 จุด
+เนื่องจากระบบงานวิ่งมีการประมวลผลข้อมูลส่วนบุคคลและข้อมูลอ่อนไหว (Sensitive Personal Data) เช่น หมายเลขโทรศัพท์, วันเกิด, กรุ๊ปเลือด, ข้อมูลติดต่อฉุกเฉิน, และข้อมูลประวัติสุขภาพ/โรคประจำตัว (`medical_conditions`) ระบบจึงออกแบบตามมาตรฐาน PDPA (พ.ร.บ. คุ้มครองข้อมูลส่วนบุคคล พ.ศ. 2562) ดังนี้:
+
+### 5.1 วัตถุประสงค์และการขอความยินยอม (Consent & Data Collection Purpose)
+- **วัตถุประสงค์**: เพื่อการจัดสรรเบอร์วิ่ง (BIB), การส่งอุปกรณ์ทางไปรษณีย์, การจับเวลาแข่งขัน, และการช่วยเหลือทางการแพทย์ฉุกเฉิน
+- **Consent Tracking**: บันทึกวันเวลาและเวอร์ชันความยินยอมในระบบ (`user.consent_pdpa_at`, `user.consent_pdpa_version`, `user.medical_consent_given`)
+
+### 5.2 การลดทอนข้อมูลและการปกป้องข้อมูลสุขภาพ (Data Minimization & Medical Protection)
+- **มาตรการป้องกันข้อมูลสุขภาพ (`medical_conditions`)**:
+  - **Staff / ผู้จัดงานทั่วไป (Default View)**: จะไม่เห็นข้อความโรคประจำตัวโดยตรง แต่จะเห็นเพียงสถานะธงเตือน `hasMedicalAlert: true/false` ("มีข้อมูลความเสี่ยงทางการแพทย์ - ดูได้เฉพาะทีมปฐมพยาบาล")
+  - **สิทธิ์เข้าถึงฉุกเฉิน (Break-Glass Protocol)**: เฉพาะแพทย์, พยาบาลสนาม, หรือผู้จัดงานที่ระบุ `includeMedical=true` จึงจะปลดล็อกอ่านรายละเอียดได้ และ**ระบบจะบันทึก Audit Log (`MEDICAL_RECORD_ACCESSED`) ทุกครั้ง**
+
+### 5.3 ตารางสิทธิ์การเข้าถึงข้อมูลตามบทบาท (Data Visibility Matrix):
+
+| ข้อมูลส่วนบุคคล (Data Field) | สมาชิกเจ้าของบัญชี | ผู้จัดงาน / สต๊าฟทั่วไป | ทีมแพทย์ / ปฐมพยาบาล | ผู้ดูแลระบบ (Admin) |
+| :--- | :---: | :---: | :---: | :---: |
+| **ชื่อ-นามสกุล, BIB, ระยะทาง** | Full | Full | Full | Full |
+| **เบอร์โทรศัพท์, เบอร์ฉุกเฉิน** | Full | Full | Full | Full |
+| **กรุ๊ปเลือด (Blood Type)** | Full | Masked / Indicator | Full | Full |
+| **โรคประจำตัว (`medical_conditions`)** | Full | 🔒 Masked (Alert Flag) | 🩺 Full (Audit Logged) | 🩺 Full (Audit Logged) |
+| **ประวัติการเงิน / เลขบัญชีคืนเงิน** | Full | ❌ ไม่มีสิทธิ์ | ❌ ไม่มีสิทธิ์ | Full (สำหรับโอนเงินคืน) |
 
 ---
+
+## 6. ระบบบันทึกประวัติความปลอดภัยระดับสูง (Audit Trail Log Architecture)
+
+ทุกการกระทำสำคัญในระบบ ทั้งฝั่ง Admin, ผู้จัดงาน, และนักวิ่ง จะถูกบันทึกความปลอดภัยตามกรอบ **WHO, WHAT, WHEN, FROM, TO, IP, USER AGENT** ลงตาราง `audit_logs`:
+
+```
+AUDIT_LOG
+├── id (UUID, PK)
+├── user_id (WHO: รหัสผู้กระทำ)
+├── user_name (WHO: ชื่อผู้กระทำ)
+├── user_role (WHO: สิทธิ์ admin, organizer, user)
+├── action (WHAT: รหัสการกระทำ)
+├── entity_type (ประเภทข้อมูล event, registration, user, medical_record, checkin)
+├── entity_id (รหัสของข้อมูลที่ได้รับผลกระทบ)
+├── from_state (FROM: สถานะเดิมก่อนเปลี่ยน)
+├── to_state (TO: สถานะใหม่หลังเปลี่ยน)
+├── ip_address (IP: หมายเลขไอพีของผู้ใช้งาน)
+├── user_agent (USER AGENT: เบราว์เซอร์และอุปกรณ์ที่ส่งคำขอ)
+├── details (JSON: รายละเอียดการดำเนินการ)
+└── created_at (WHEN: วันเวลาที่เกิดเหตุการณ์แบบแม่นยำสูง)
+```
+
+### การกระทำที่ระบบบันทึก Audit Log อัตโนมัติ:
+- `ADMIN_APPROVE_EVENT`: แอดมินอนุมัติคำขอจัดงานวิ่ง
+- `ADMIN_REJECT_EVENT`: แอดมินปฏิเสธคำขอจัดงานวิ่ง
+- `ADMIN_CANCEL_REGISTRATION`: ยกเลิกใบสมัครนักวิ่งและบันทึกยอดคืนเงิน
+- `ADMIN_CHANGE_USER_ROLE`: เปลี่ยนสิทธิ์ผู้ใช้งาน (เช่น เลื่อนขั้นเป็น Admin)
+- `ORGANIZER_CHECKIN`: สแกนตรวจ BIB มอบอุปกรณ์หน้างาน
+- `OFFLINE_CHECKIN_SYNC`: ซิงค์ข้อมูลเช็คอินออฟไลน์จากพรม/เครื่องสแกน
+- `BIB_TRANSFER`: โอนสิทธิ์เบอร์วิ่งให้นักวิ่งคนใหม่
+- `REFUND_APPROVED`: อนุมัติการคืนเงินเข้าบัญชีนักวิ่ง
+- `MEDICAL_RECORD_ACCESSED`: มีการเปิดดูข้อมูลประวัติสุขภาพฉุกเฉิน
+- `EXPORT_PARTICIPANTS`: มีการดาวน์โหลดรายชื่อนักวิ่งออกจากระบบ
+
+---
+
+## 7. มาตรฐาน API Response & Error Handling Contract
+
+ทุก API Endpoint ในระบบออกแบบตามมาตรฐาน Response Envelope แบบ Type-Safe:
+
+### 7.1 โครงสร้างกรณีสำเร็จ (Success Envelope - HTTP 200/201):
+```json
+{
+  "success": true,
+  "data": {
+    "message": "ดำเนินการสำเร็จ",
+    "event": { ... },
+    "participants": [ ... ]
+  },
+  "error": null
+}
+```
+
+### 7.2 โครงสร้างกรณีเกิดข้อผิดพลาด (Error Envelope):
+```json
+{
+  "success": false,
+  "data": null,
+  "error": {
+    "code": "PROFILE_INCOMPLETE",
+    "message": "ข้อมูลโปรไฟล์นักวิ่งยังไม่ครบถ้วน กรุณาระบุข้อมูลฉุกเฉินก่อนสมัคร",
+    "details": {
+      "missingFields": ["emergencyName", "emergencyPhone"]
+    }
+  }
+}
+```
+
+### 7.3 ตารางรหัสข้อผิดพลาดและ HTTP Status มาตรฐาน:
+
+| HTTP Status | Error Code | ความหมายและการจัดการ |
+| :--- | :--- | :--- |
+| **`400 Bad Request`** | `VALIDATION_ERROR`<br>`PROFILE_INCOMPLETE` | ข้อมูลนำเข้าไม่ถูกต้อง หรือกรอกข้อมูลนักวิ่งไม่ครบตามเกณฑ์ |
+| **`401 Unauthorized`** | `UNAUTHORIZED`<br>`SESSION_EXPIRED` | ยังไม่ได้เข้าสู่ระบบ หรือเซสชันหมดอายุ |
+| **`403 Forbidden`** | `FORBIDDEN`<br>`INSUFFICIENT_PERMISSIONS` | ไม่มีสิทธิ์เข้าถึงพื้นที่ เช่น ไม่ใช่ Admin หรือไม่ใช่ผู้จัดงานนั้นๆ |
+| **`404 Not Found`** | `RESOURCE_NOT_FOUND`<br>`EVENT_NOT_FOUND`<br>`BIB_NOT_FOUND` | ไม่พบข้อมูลงานวิ่ง หรือไม่พบหมายเลข BIB ในระบบ |
+| **`409 Conflict`** | `CONFLICT`<br>`ALREADY_CHECKED_IN`<br>`ALREADY_TRANSFERRED` | ข้อมูลขัดแย้ง เช่น BIB ถูกเช็คอินหรือโอนสิทธิ์ไปแล้ว |
+| **`429 Too Many Requests`** | `RATE_LIMITED` | ยิงคำขอถี่เกินขีดจำกัดความปลอดภัย |
+| **`500 Server Error`** | `INTERNAL_SERVER_ERROR` | เกิดข้อผิดพลาดฝั่งเซิร์ฟเวอร์ |
+
+---
+
+## 8. ระบบตรวจ BIB ออฟไลน์และความต่อเนื่องทางธุรกิจ (Offline Check-in & Two-Way Sync Pipeline) 🔴
+
+แก้ปัญหาวิกฤตสัญญาณอินเทอร์เน็ตล่มหรือ Wi-Fi ไม่เสถียรในวันจัดงานจริง เพื่อไม่ให้นักวิ่ง 5,000 คนต้องติดขัดที่ซุ้มทางเข้า
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Staff as สต๊าฟตรวจ BIB (สนามวิ่ง)
+    participant UI as ระบบหน้าเว็บ Check-in
+    participant IDB as Local IndexedDB (ในเครื่อง)
+    participant API as /api/organizer/checkin/sync
+    participant DB as PostgreSQL Database
+
+    Note over Staff,UI: ขั้นตอนที่ 1: เตรียมพร้อมก่อนเริ่มงาน (มีเน็ต)
+    Staff->>UI: กดปุ่ม "ดาวน์โหลด Roster ลงเครื่อง"
+    UI->>DB: ดึงรายชื่อนักวิ่งทั้งหมดของงาน
+    DB-->>UI: รายชื่อนักวิ่ง 5,000 คน
+    UI->>IDB: บันทึกลงตาราง `roster` ใน IndexedDB
+
+    Note over Staff,UI: ขั้นตอนที่ 2: ช่วงแข่งขัน (เน็ตล่ม / ออฟไลน์ 100%)
+    Staff->>UI: สแกน QR Code หรือกรอก BIB
+    UI->>IDB: ค้นหานักวิ่งในเครื่อง (< 10ms)
+    IDB-->>UI: พบข้อมูลนักวิ่ง
+    UI->>IDB: มาร์ก checkedIn = yes & บันทึกเข้า `sync_queue`
+    UI-->>Staff: แสดงหน้าบัตรสำเร็จ + เล่นเสียงปี๊บ (Web Audio)
+
+    Note over Staff,DB: ขั้นตอนที่ 3: เมื่อเน็ตกลับมา (Auto Two-Way Sync)
+    UI->>UI: ตรวจพบ event 'online'
+    UI->>IDB: ดึงรายการค้างส่งจาก `sync_queue`
+    UI->>API: ส่ง Batch Sync Request
+    API->>DB: ตรวจสอบและแก้ไข Conflict อัตโนมัติ
+    DB-->>API: อัปเดตสถานะเช็คอินลงฐานข้อมูลหลัก
+    API-->>UI: ส่งผลลัพธ์การซิงค์ (สำเร็จ X รายการ)
+    UI->>IDB: เคลียร์คิวที่ซิงค์สำเร็จแล้ว
+```
+
+### กลยุทธ์การจัดการข้อขัดแย้ง (Conflict Resolution Policy):
+1. **การรักษาเวลาที่ถูกต้อง (Earliest Timestamp Preservation)**: หากนักวิ่งถูกสแกนทั้งออฟไลน์และออนไลน์ ระบบจะเลือกเวลา `checkedInAt` ที่เกิดขึ้นจริงเร็วที่สุด
+2. **การทำงานซ้ำได้อย่างปลอดภัย (Idempotency)**: การสแกนซ้ำหลายครั้งในเครื่องต่างกัน จะไม่ทำให้ระบบ Error หรือเกิดข้อมูลซ้ำซ้อน
+3. **การตรวจสอบสิทธิ์โอน/ยกเลิก (Transfer Conflict Flagging)**: หาก BIB ถูกโอนสิทธิ์หรือยกเลิกระหว่างที่เครื่องออฟไลน์ ระบบจะขึ้นแจ้งเตือนข้อขัดแย้งให้ผู้จัดงานตรวจสอบทันที
+
+---
+
+## 9. ข้อมูลและบัญชีทดสอบในระบบ (Demo Accounts)
+
+| ประเภทบัญชี | อีเมล / ชื่อผู้ใช้ | รหัสผ่าน | สิทธิ์ (Role) |
+| :--- | :--- | :--- | :--- |
+| **สมาชิกทั่วไป (Member)** | `user-runway` | `user-runway` | `user` |
+| **ผู้ดูแลระบบ (Admin)** | `admin-runway` | `admin-runway` | `admin` |
+
 
 ## 4. รายการ API Endpoints ทั้งหมด
 

@@ -28,6 +28,10 @@ export const user = pgTable("user", {
   runningClub: text("running_club"),
   targetPace: text("target_pace"),
   chipCode: text("chip_code"),
+  // PDPA & Consent Tracking
+  consentPdpaAt: timestamp("consent_pdpa_at", { withTimezone: true }),
+  consentPdpaVersion: text("consent_pdpa_version").default("PDPA-TH-2026-V1"),
+  medicalConsentGiven: boolean("medical_consent_given").default(true),
 });
 
 export const session = pgTable("session", {
