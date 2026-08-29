@@ -1096,14 +1096,14 @@ function OrganizerCheckInContent() {
           onOpenChange={setScannerOpen}
           onScan={handleQrScan}
           participants={participants}
-          eventName={events.find((e) => e.id === selectedEventId)?.title || "งานวิ่ง"}
+          eventName={selectedEvent?.title || events[0]?.title || "งานวิ่ง"}
         />
 
         {/* T-Shirt Size Breakdown Modal */}
         <ShirtBreakdownDialog
           open={shirtModalOpen}
           onOpenChange={setShirtModalOpen}
-          eventTitle={events.find((e) => e.id === selectedEventId)?.title || "งานวิ่ง"}
+          eventTitle={selectedEvent?.title || events[0]?.title || "งานวิ่ง"}
           participants={participants}
         />
 
@@ -1120,7 +1120,7 @@ function OrganizerCheckInContent() {
           open={rfidModalOpen}
           onOpenChange={setRfidModalOpen}
           eventId={selectedEventId}
-          eventName={events.find((e) => e.id === selectedEventId)?.title || "งานวิ่ง"}
+          eventName={selectedEvent?.title || events[0]?.title || "งานวิ่ง"}
           participants={participants}
           onTimingUpdated={() => loadEventData(selectedEventId)}
         />
