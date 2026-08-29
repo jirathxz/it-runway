@@ -69,7 +69,7 @@ export default function Home() {
   const [dbStats, setDbStats] = useState<{ totalEvents: number; totalUsers: number; totalRegistrations: number }>({
     totalEvents: 13,
     totalUsers: 17,
-    totalRegistrations: 186,
+    totalRegistrations: 210,
   });
 
   useEffect(() => {
@@ -352,7 +352,7 @@ export default function Home() {
               <div className="mt-[var(--space-l)] grid grid-cols-3 gap-[var(--space-m)] border-t pt-[var(--space-m)]" style={{ borderColor: "var(--line)" }}>
                 {[
                   { to: dbStats.totalEvents || dbEvents.length || 13, suffix: " งาน", label: "งานแข่งขัน", sub: "ในระบบนครปฐม" },
-                  { to: dbStats.totalRegistrations || 186, suffix: " คน", label: "ลงทะเบียนแล้ว", sub: "ชิปไทม์มิ่งรับรอง" },
+                  { to: dbStats.totalRegistrations || 210, suffix: " ครั้ง", label: "ลงทะเบียนแล้ว", sub: "ชิปไทม์มิ่งรับรอง" },
                   { to: dbStats.totalUsers || 17, suffix: " ท่าน", label: "นักวิ่งในระบบ", sub: "บัญชีนักวิ่งจริง" },
                 ].map((s) => (
                   <div key={s.label}>
