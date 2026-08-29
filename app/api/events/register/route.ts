@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { registrations, events, user } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { headers } from "next/headers";
+import { NotificationService } from "@/lib/notification-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -145,6 +146,30 @@ export async function POST(req: NextRequest) {
         trackingNumber: shippingStatus === "delivered" ? `TH${Math.floor(10000000 + Math.random() * 90000000)}NP` : null,
       })
       .returning();
+
+    // Dispatch multi-channel notifications (Registration Confirmed, Payment Successful, BIB Issued)
+    try {
+      await NotificationService.notifyRegistrationConfirmed(
+        session.user.id,
+        targetEvent.title,
+        distance
+      );
+      await NotificationService.notifyPaymentSuccessful(
+        session.user.id,
+        targetEvent.title,
+        targetEvent.price || 500,
+        bibNumber
+      );
+      await NotificationService.notifyBibIssued(
+        session.user.id,
+        targetEvent.title,
+        bibNumber,
+        chipCode,
+        corral
+      );
+    } catch (notifErr) {
+      console.error("Failed to trigger registration notifications:", notifErr);
+    }
 
     return NextResponse.json({
       success: true,

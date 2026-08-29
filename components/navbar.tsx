@@ -25,9 +25,11 @@ import {
   Sparkles,
   Home,
   QrCode,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 import { SearchCommandDialog } from "@/components/search/search-command-dialog";
+import { NotificationCenterDialog } from "@/components/notifications/notification-center-dialog";
 
 export interface NavItem {
   label: string;
@@ -85,9 +87,26 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [notifOpen, setNotifOpen] = React.useState(false);
+  const [unreadNotifCount, setUnreadNotifCount] = React.useState(0);
 
   const userMenuRef = React.useRef<HTMLDivElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch unread notifications count
+  React.useEffect(() => {
+    if (session?.user) {
+      fetch("/api/notifications")
+        .then((res) => res.json())
+        .then((json) => {
+          const payload = json.data || json;
+          if (payload.counts) {
+            setUnreadNotifCount(payload.counts.unread || 0);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
 
   // Close dropdown on click outside
   React.useEffect(() => {
@@ -297,6 +316,23 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                 ⌘K
               </kbd>
             </button>
+
+            {/* Notification Center Trigger */}
+            {session && (
+              <button
+                type="button"
+                onClick={() => setNotifOpen(true)}
+                className="relative flex size-9 items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] text-[var(--ink-2)] transition-all hover:border-[var(--accent)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] shrink-0 cursor-pointer"
+                aria-label="ศูนย์แจ้งเตือน"
+              >
+                <Bell className="size-4" />
+                {unreadNotifCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-[var(--base)] animate-pulse font-mono">
+                    {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Authenticated State vs Guest State */}
             {isPending ? (
@@ -737,6 +773,13 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
 
       {/* Global Real-Time Search & Autocomplete Modal Dialog */}
       <SearchCommandDialog open={searchOpen} onOpenChange={setSearchOpen} />
+
+      {/* Multi-Channel Notification Center Dialog */}
+      <NotificationCenterDialog
+        open={notifOpen}
+        onOpenChange={setNotifOpen}
+        onUnreadCountChange={setUnreadNotifCount}
+      />
     </>
   );
 }

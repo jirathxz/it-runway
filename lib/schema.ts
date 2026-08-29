@@ -426,16 +426,21 @@ export const organizerMembers = pgTable("organizer_members", {
 // 9. NOTIFICATIONS & AUDIT LOGS MODULE (2 tables)
 // =========================================================================
 
-// 27. notifications
+// 27. notifications (Multi-Channel: Email, SMS, Push, In-App across 9 Core Events)
 export const notifications = pgTable("notifications", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
-  type: text("type").notNull().default("system"), // registration_success, bib_assigned, transfer_alert, race_day_reminder
+  type: text("type").notNull().default("REGISTRATION_CONFIRMED"), // REGISTRATION_CONFIRMED, PAYMENT_SUCCESSFUL, BIB_ISSUED, RACE_REMINDER, SHIPPING_UPDATED, EVENT_CANCELLED, TRANSFER_COMPLETED, RESULTS_PUBLISHED, CERTIFICATE_AVAILABLE
+  channel: text("channel").notNull().default("in_app"), // in_app, email, sms, push
+  recipient: text("recipient"), // email address, phone number, push token
   title: text("title").notNull(),
   message: text("message").notNull(),
   linkUrl: text("link_url"),
+  status: text("status").notNull().default("DELIVERED"), // PENDING, SENT, DELIVERED, FAILED
   isRead: boolean("is_read").notNull().default(false),
   sentAt: timestamp("sent_at", { withTimezone: true }).defaultNow().notNull(),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }).defaultNow(),
+  metadata: text("metadata"), // JSON additional payload
 });
 
 // 28. audit_logs (Complete Audit Trail: WHO, WHAT, WHEN, FROM, TO, IP, USER AGENT)

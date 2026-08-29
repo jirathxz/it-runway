@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registrations, user, events, bibTransfers } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
+import { NotificationService } from "@/lib/notification-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -134,6 +135,20 @@ export async function POST(req: NextRequest) {
         })
         .where(eq(user.id, targetUserId));
     }
+
+    // Trigger multi-channel notification for Transfer Completed
+    const [eventData] = await db
+      .select({ title: events.title })
+      .from(events)
+      .where(eq(events.id, reg.eventId))
+      .limit(1);
+
+    await NotificationService.notifyTransferCompleted(
+      session.user.id,
+      eventData?.title || "งานวิ่ง",
+      reg.bibNumber,
+      newRunnerName
+    );
 
     return NextResponse.json({
       success: true,

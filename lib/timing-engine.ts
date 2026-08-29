@@ -223,6 +223,25 @@ export async function processRfidDetection(payload: RfidRawPayload) {
     .where(eq(raceResults.id, resultId!))
     .limit(1);
 
+  // 7. Dispatch multi-channel notifications (Results Published & Certificate Available)
+  try {
+    const { NotificationService } = await import("./notification-service");
+    await NotificationService.notifyResultsPublished(
+      runnerUser.id,
+      event.title,
+      registration.bibNumber,
+      chipTimeStr,
+      String(finalResult[0]?.overallRank || 1)
+    );
+    await NotificationService.notifyCertificateAvailable(
+      runnerUser.id,
+      event.title,
+      registration.bibNumber
+    );
+  } catch (notifErr) {
+    console.error("Failed to dispatch timing notifications:", notifErr);
+  }
+
   return {
     success: true,
     readRecord,

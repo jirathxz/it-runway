@@ -79,6 +79,18 @@ export async function POST(req: NextRequest) {
 
     const refundRef = `REFUND-NP-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    // Dispatch multi-channel notification for Event Cancelled / Refund
+    try {
+      const { NotificationService } = await import("@/lib/notification-service");
+      await NotificationService.notifyEventCancelled(
+        session.user.id,
+        target.eventTitle,
+        650
+      );
+    } catch (notifErr) {
+      console.error("Failed to dispatch cancel notification:", notifErr);
+    }
+
     return NextResponse.json({
       success: true,
       message: `ยกเลิกการสมัครงาน "${target.eventTitle}" (BIB ${target.bibNumber}) เรียบร้อยแล้ว`,

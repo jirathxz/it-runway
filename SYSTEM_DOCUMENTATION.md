@@ -703,7 +703,51 @@ sequenceDiagram
 
 ---
 
-## 9. ข้อมูลและบัญชีทดสอบในระบบ (Demo Accounts)
+## 10. ระบบแจ้งเตือนมัลติแชนแนล (Multi-Channel Notification System) 🔔
+
+ระบบแจ้งเตือนได้รับการออกแบบให้ครอบคลุม 4 ช่องทางสื่อสาร (Multi-Channel Delivery) และรองรับ 9 เหตุการณ์สำคัญ (Core Event Triggers) ตลอดวงจรชีวิตงานวิ่ง:
+
+### 10.1 ช่องทางการส่งข้อมูล (Channels Supported):
+1. **📧 Email**: จัดส่งด้วย Responsive HTML Email Template แบบอัตโนมัติ
+2. **📱 SMS**: จัดส่งข้อความสั้นพร้อมลิงก์ติดตามสถานะตรงเข้าเบอร์มือถือนักวิ่ง
+3. **🔔 Web Push Notification**: แจ้งเตือนผ่านเบราว์เซอร์และ PWA
+4. **💬 In-App Notification Center**: ศูนย์แจ้งเตือนในระบบพร้อมไอคอนกระดิ่งและตัวเลขนับแบบเรียลไทม์
+
+### 10.2 ตาราง 9 เหตุการณ์สำคัญและการจัดส่ง (Core Trigger Events Matrix):
+
+| Trigger Event Type | ช่องทางที่รองรับ | เนื้อหาข้อความและการดำเนินการ | ลิงก์ปลายทาง |
+| :--- | :--- | :--- | :--- |
+| **`REGISTRATION_CONFIRMED`** | In-App, Email, SMS, Push | ยืนยันการสมัครเข้าร่วมงานวิ่งสำเร็จ ระบุชื่องานและระยะทาง | `/account/bibs` |
+| **`PAYMENT_SUCCESSFUL`** | In-App, Email, SMS, Push | ยืนยันยอดเงินที่ชำระและออกหมายเลข BIB เบื้องต้น | `/account/bibs` |
+| **`BIB_ISSUED`** | In-App, Email, SMS, Push | แจ้งหมายเลข BIB, กลุ่ม Corral, และรหัสชิปจับเวลา RFID | `/account/bibs` |
+| **`RACE_REMINDER`** | In-App, Email, SMS, Push | แจ้งเตือนก่อนวันแข่ง (วันเวลา, จุดปล่อยตัว, การเตรียมตัว) | `/calendar` |
+| **`SHIPPING_UPDATED`** | In-App, Email, SMS, Push | แจ้งหมายเลขพัสดุและสถานะการจัดส่งเสื้อ/BIB ถึงบ้าน | `/account/bibs` |
+| **`EVENT_CANCELLED`** | In-App, Email, SMS, Push | แจ้งเตือนการยกเลิกงานและยอดเงินคืนเข้าบัญชี | `/account/bibs` |
+| **`TRANSFER_COMPLETED`** | In-App, Email, SMS, Push | ยืนยันการโอนสิทธิ์ BIB ให้นักวิ่งท่านอื่นเสร็จสมบูรณ์ | `/account/bibs` |
+| **`RESULTS_PUBLISHED`** | In-App, Email, SMS, Push | ประกาศผลสถิติเวลา Chip Time และอันดับ Overall/รุ่นอายุ | `/results` |
+| **`CERTIFICATE_AVAILABLE`** | In-App, Email, SMS, Push | ใบประกาศนียบัตร e-Certificate พร้อมให้ดาวน์โหลด | `/results` |
+
+### 10.3 โครงสร้างตารางแจ้งเตือน (`notifications`):
+```
+NOTIFICATIONS
+├── id (UUID, PK)
+├── user_id (FK -> users.id)
+├── type (REGISTRATION_CONFIRMED, PAYMENT_SUCCESSFUL, BIB_ISSUED, ...)
+├── channel (in_app, email, sms, push)
+├── recipient (email address, phone number, push token)
+├── title (หัวข้อการแจ้งเตือน)
+├── message (เนื้อหาข้อความ)
+├── link_url (ลิงก์ปลายทาง)
+├── status (PENDING, SENT, DELIVERED, FAILED)
+├── is_read (BOOLEAN)
+├── sent_at (TIMESTAMPTZ)
+├── delivered_at (TIMESTAMPTZ)
+└── metadata (JSON: ข้อมูลบริบทเพิ่มเติม)
+```
+
+---
+
+## 11. ข้อมูลและบัญชีทดสอบในระบบ (Demo Accounts)
 
 | ประเภทบัญชี | อีเมล / ชื่อผู้ใช้ | รหัสผ่าน | สิทธิ์ (Role) |
 | :--- | :--- | :--- | :--- |

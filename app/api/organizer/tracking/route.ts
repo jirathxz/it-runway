@@ -6,6 +6,7 @@ import { registrations, events } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { recordAuditLog } from "@/lib/audit-logger";
+import { NotificationService } from "@/lib/notification-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,6 +84,22 @@ export async function POST(req: NextRequest) {
       userAgent: userAgent,
       details: { bibNumber: reg.bibNumber, trackingNumber, shippingStatus: targetShippingStatus },
     });
+
+    // Multi-channel notification for shipping updated
+    if (trackingNumber) {
+      const [eventData] = await db
+        .select({ title: events.title })
+        .from(events)
+        .where(eq(events.id, reg.eventId))
+        .limit(1);
+
+      await NotificationService.notifyShippingUpdated(
+        reg.userId,
+        eventData?.title || "งานวิ่ง",
+        reg.bibNumber,
+        trackingNumber
+      );
+    }
 
     return apiSuccess({
       message: "อัปเดตหมายเลขพัสดุเรียบร้อยแล้ว",
