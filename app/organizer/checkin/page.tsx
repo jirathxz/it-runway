@@ -497,9 +497,13 @@ function OrganizerCheckInContent() {
           </div>
 
           {/* Event Picker Dropdown */}
-          {events.length > 0 && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-[var(--ink-3)] shrink-0">เลือกงาน:</span>
+          {events.length > 0 ? (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--ink-2)]">
+                <span className="text-[var(--accent)] font-bold">
+                  {(session?.user as any)?.role === "admin" ? "👑 สิทธิ์แอดมิน (ทุกงาน)" : "👤 งานที่คุณเป็นผู้จัด:"}
+                </span>
+              </div>
               <div className="relative">
                 <select
                   value={selectedEventId}
@@ -515,17 +519,49 @@ function OrganizerCheckInContent() {
                 <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 size-3.5 text-[var(--ink-3)]" />
               </div>
             </div>
+          ) : (
+            <Badge variant="outline" className="font-mono text-xs text-[var(--ink-3)] border-[var(--line)] self-start sm:self-auto">
+              ระบบตรวจ BIB เฉพาะผู้จัดงาน
+            </Badge>
           )}
         </div>
 
-        {error ? (
-          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-8 text-center max-w-lg mx-auto space-y-4">
-            <AlertCircle className="size-12 text-red-400 mx-auto" />
-            <h2 className="text-lg font-bold">ไม่สามารถเข้าถึงระบบตรวจ BIB ได้</h2>
-            <p className="text-xs text-[var(--ink-2)]">{error}</p>
-            <div className="flex gap-2 justify-center">
-              <Button asChild size="sm">
-                <Link href="/organize">ขอจัดงานวิ่ง</Link>
+        {!session && !authPending ? (
+          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-8 sm:p-12 text-center max-w-lg mx-auto space-y-4 shadow-[var(--shadow-far)]">
+            <div className="size-12 rounded-2xl bg-[var(--accent)]/15 border border-[var(--accent)]/30 flex items-center justify-center text-[var(--accent)] mx-auto">
+              <Lock className="size-6" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-lg font-bold font-[var(--font-display)]">กรุณาเข้าสู่ระบบก่อนใช้งาน</h2>
+              <p className="text-xs text-[var(--ink-2)] leading-relaxed">
+                ระบบตรวจ BIB นักวิ่งและเช็คอินเข้างานสงวนสิทธิ์สำหรับผู้จัดงาน (Organizer) ที่มีงานวิ่งที่ได้รับอนุมัติในระบบ
+              </p>
+            </div>
+            <div className="flex gap-2.5 justify-center pt-2">
+              <Button asChild size="default" className="font-bold text-xs bg-[var(--accent)] text-[var(--accent-ink)]">
+                <Link href="/auth/sign-in">เข้าสู่ระบบด้วยบัญชีผู้จัดงาน</Link>
+              </Button>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-8 sm:p-10 text-center max-w-lg mx-auto space-y-4 shadow-[var(--shadow-near)]">
+            <div className="size-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto">
+              <Footprints className="size-6" />
+            </div>
+            <div className="space-y-1.5">
+              <h2 className="text-lg font-bold font-[var(--font-display)] text-[var(--ink)]">
+                ไม่พบงานวิ่งที่คุณเป็นผู้จัดในขณะนี้
+              </h2>
+              <p className="text-xs text-[var(--ink-2)] leading-relaxed max-w-md mx-auto">
+                ระบบตรวจ BIB อนุญาตให้ผู้จัดงานเข้าถึงและเช็คอินได้เฉพาะงานวิ่งที่คุณเป็นเจ้าของและได้รับการอนุมัติแล้วเท่านั้น
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2.5 justify-center pt-2">
+              <Button asChild size="sm" className="font-bold text-xs bg-[var(--accent)] text-[var(--accent-ink)]">
+                <Link href="/organize">ยื่นขอจัดงานวิ่งใหม่</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="text-xs">
+                <Link href="/">กลับสู่หน้าแรก</Link>
               </Button>
             </div>
           </div>

@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
 
     const isAdmin = (session.user as any)?.role === "admin";
 
-    // Query events to verify authorization
+    // Query events to verify authorization (Strictly organizer's own approved events)
     const allEvents = await db.select().from(events);
     const accessibleEvents = isAdmin
       ? allEvents
@@ -35,14 +35,22 @@ export async function GET(req: NextRequest) {
         );
 
     if (accessibleEvents.length === 0) {
-      return apiError("FORBIDDEN", "คุณไม่มีสิทธิ์ในการจัดการงานวิ่งนี้", 403);
+      return apiError(
+        "NO_ORGANIZED_EVENTS",
+        "คุณยังไม่มีงานวิ่งที่ได้รับอนุมัติในระบบ (ระบบตรวจ BIB สงวนสิทธิ์เฉพาะงานวิ่งที่คุณเป็นผู้จัดเท่านั้น)",
+        403
+      );
     }
 
     const targetEventId = eventId || accessibleEvents[0].id;
     const targetEvent = accessibleEvents.find((e) => e.id === targetEventId);
 
-    if (!targetEvent && !isAdmin) {
-      return apiError("FORBIDDEN", "ไม่พบงานวิ่งที่ระบุหรือไม่มีสิทธิ์เข้าถึง", 403);
+    if (!targetEvent) {
+      return apiError(
+        "FORBIDDEN",
+        "คุณไม่มีสิทธิ์เข้าถึงหรือตรวจ BIB งานวิ่งนี้ (อนุญาตเฉพาะผู้จัดงานที่เป็นเจ้าของงานวิ่งเท่านั้น)",
+        403
+      );
     }
 
     // Query registrations for targetEventId
