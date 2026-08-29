@@ -205,14 +205,14 @@ export default function Home() {
             />
           </div>
           <div className="absolute inset-0 opacity-[0.32]">
-            <Aurora colorStops={["#0ea5e9", "#06b6d4", "#8b5cf6"]} blend={0.52} amplitude={0.85} speed={0.55} />
+            <Aurora colorStops={["oklch(0.88 0.17 95)", "oklch(0.72 0.16 145)", "oklch(0.88 0.17 95 / 0.6)"]} blend={0.52} amplitude={0.85} speed={0.55} />
           </div>
           <div className="absolute inset-0 bg-gradient-to-b from-[var(--base)]/8 via-[var(--base)]/45 to-[var(--base)]" />
           <div className="absolute inset-0 bg-gradient-to-r from-[var(--base)]/60 via-transparent to-[var(--base)]/30" />
         </div>
         <div className="absolute inset-0 bg-grid opacity-[0.28]" aria-hidden />
 
-        <div className="relative mx-auto max-w-[var(--content-max)] px-[var(--space-s)] pb-[var(--space-xl)] pt-[var(--space-l)] lg:px-[var(--space-m)] lg:pb-[var(--space-2xl)] lg:pt-[var(--space-xl)]">
+        <div className="relative mx-auto max-w-[var(--content-max)] px-[var(--space-s)] pb-[var(--space-xl)] pt-[var(--space-l)] lg:px-[var(--space-m)] lg:pb-[var(--space-2xl)] lg:pt-[var(--space-xl)]" id="main-content">
           {/* 12-col skeleton */}
           <div className="grid gap-[var(--space-l)] lg:grid-cols-12 lg:gap-[var(--space-m)]">
             {/* LEFT — 7 cols */}
@@ -404,6 +404,8 @@ export default function Home() {
                             src={dbEvents[0].image || "https://images.pexels.com/photos/2402777/pexels-photo-2402777.jpeg?auto=compress&cs=tinysrgb&w=600"}
                             alt={dbEvents[0].title}
                             className="absolute inset-0 size-full object-cover"
+                            fetchPriority="high"
+                            loading="eager"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[var(--surface)] via-black/40 to-black/30 z-10" />
 

@@ -556,19 +556,21 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
         >
           <div className="min-h-0 max-h-[calc(100dvh-64px)] overflow-y-auto px-4 py-5 flex flex-col gap-4">
             {/* Mobile Search Bar Trigger */}
-            <div
+            <button
+              type="button"
               onClick={() => {
                 setMobileOpen(false);
                 setSearchOpen(true);
               }}
-              className="relative flex items-center h-11 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-2)] pl-10 pr-4 text-xs font-[var(--font-text)] text-[var(--ink-2)] cursor-pointer hover:border-[var(--accent)] hover:text-[var(--ink)] transition-colors"
+              className="relative flex items-center h-11 w-full rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-2)] pl-10 pr-4 text-xs font-[var(--font-text)] text-[var(--ink-2)] cursor-pointer hover:border-[var(--accent)] hover:text-[var(--ink)] transition-colors text-left"
+              aria-label="เปิดการค้นหา (Ctrl+K)"
             >
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--accent)]" />
               <span>ค้นหางานวิ่ง, มินิมาราธอน, นครปฐม...</span>
               <kbd className="ml-auto rounded border border-[var(--line)] bg-[var(--surface)] px-1.5 py-0.5 font-[var(--font-mono)] text-[9px] text-[var(--ink-3)]">
                 ⌘K
               </kbd>
-            </div>
+            </button>
 
             {/* Mobile Navigation Links (Touch Friendly: min 44px height) */}
             <nav className="flex flex-col gap-1.5" aria-label="เมนูมือถือ">

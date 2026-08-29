@@ -292,15 +292,6 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
     <div className="flex flex-col gap-6 sm:gap-8 pb-16">
       {/* Header Banner */}
       <div className="relative overflow-hidden rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-near)]">
-        {/* Background gradient decorative glow */}
-        <div
-          className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full opacity-20 blur-3xl"
-          style={{ background: "var(--accent)" }}
-        />
-        <div
-          className="pointer-events-none absolute -left-20 -bottom-20 size-80 rounded-full opacity-10 blur-3xl"
-          style={{ background: "oklch(0.65 0.18 45)" }}
-        />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex flex-col gap-2">
@@ -504,13 +495,16 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
                 const isWeekend = idx % 7 === 0 || idx % 7 === 6;
 
                 return (
-                  <div
+                  <button
                     key={`${cell.isoDate}-${idx}`}
+                    type="button"
                     onClick={() => {
                       setSelectedDate(cell.isoDate);
                     }}
+                    aria-label={`${cell.dayNumber} เดือน${MONTH_NAMES_TH[cell.month]}${cell.events.length > 0 ? ` มี ${cell.events.length} กิจกรรม` : ""}`}
+                    aria-pressed={selectedDate === cell.isoDate}
                     className={cn(
-                      "group relative flex flex-col p-1.5 sm:p-2 min-h-[78px] sm:min-h-[105px] lg:min-h-[115px] rounded-[var(--radius)] border transition-all cursor-pointer select-none",
+                      "group relative flex flex-col p-1.5 sm:p-2 min-h-[78px] sm:min-h-[105px] lg:min-h-[115px] rounded-[var(--radius-sm)] border transition-all cursor-pointer select-none text-left w-full",
                       isSelected
                         ? "border-[var(--accent)] bg-[var(--surface-2)] ring-2 ring-[var(--accent)]/30 z-10 shadow-[var(--shadow-near)]"
                         : cell.isCurrentMonth
@@ -583,7 +577,7 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

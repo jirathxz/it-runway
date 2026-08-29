@@ -53,8 +53,9 @@
   --accent-glow: oklch(0.88 0.17 95 / 0.18);
   --positive: oklch(0.72 0.16 145);     /* chip timing green only */
 
-  /* FORM — ONE RADIUS ONLY (Brutalist: commit to 12px) */
+  /* FORM — primary radius 12px + compact 4px for dense data elements */
   --radius: 12px;
+  --radius-sm: 4px;
   --border: 1px solid var(--line);
   --border-accent: 1px solid var(--accent);
 
@@ -116,3 +117,24 @@ body {
 
 /* Tabular numerals — required for time/distance */
 .numeric { font-variant-numeric: tabular-nums lining-nums; font-family: var(--font-mono); }
+
+/* prefers-reduced-motion — disable all decorative animation/transition
+   Functional transitions (focus rings, active states) are preserved at 1ms. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Tailwind animate-* utilities */
+  .animate-pulse,
+  .animate-ping,
+  .animate-spin,
+  .animate-bounce {
+    animation: none !important;
+  }
+}

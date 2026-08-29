@@ -140,6 +140,11 @@ export default function Aurora(props: AuroraProps) {
     const ctn = ctnDom.current;
     if (!ctn) return;
 
+    // Respect prefers-reduced-motion — render a single static frame, no animation loop
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     const renderer = new Renderer({
       alpha: true,
       premultipliedAlpha: true,
@@ -191,23 +196,29 @@ export default function Aurora(props: AuroraProps) {
     ctn.appendChild(gl.canvas);
 
     let animateId = 0;
-    const update = (t: number) => {
-      animateId = requestAnimationFrame(update);
-      const { time = t * 0.01, speed: s = 1.0 } = (propsRef as any).current;
-      program.uniforms.uTime.value = time * s * 0.1;
-      program.uniforms.uAmplitude.value = (propsRef as any).current.amplitude ?? 1.0;
-      program.uniforms.uBlend.value = (propsRef as any).current.blend ?? blend;
-      program.uniforms.uLightMode.value = (propsRef as any).current.lightMode ? 1 : 0;
-      const stops = (propsRef as any).current.colorStops ?? colorStops;
-      program.uniforms.uColorStops.value = stops.map((hex: string) => {
-        const c = new Color(hex);
-        return [c.r, c.g, c.b];
-      });
-      renderer.render({ scene: mesh });
-    };
-    animateId = requestAnimationFrame(update);
 
-    resize();
+    if (prefersReduced) {
+      // Single static frame — no rAF loop
+      resize();
+      renderer.render({ scene: mesh });
+    } else {
+      const update = (t: number) => {
+        animateId = requestAnimationFrame(update);
+        const { time = t * 0.01, speed: s = 1.0 } = (propsRef as any).current;
+        program.uniforms.uTime.value = time * s * 0.1;
+        program.uniforms.uAmplitude.value = (propsRef as any).current.amplitude ?? 1.0;
+        program.uniforms.uBlend.value = (propsRef as any).current.blend ?? blend;
+        program.uniforms.uLightMode.value = (propsRef as any).current.lightMode ? 1 : 0;
+        const stops = (propsRef as any).current.colorStops ?? colorStops;
+        program.uniforms.uColorStops.value = stops.map((hex: string) => {
+          const c = new Color(hex);
+          return [c.r, c.g, c.b];
+        });
+        renderer.render({ scene: mesh });
+      };
+      animateId = requestAnimationFrame(update);
+      resize();
+    }
 
     return () => {
       cancelAnimationFrame(animateId);

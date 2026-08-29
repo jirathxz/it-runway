@@ -35,6 +35,17 @@ export default function CountUp({
     const el = ref.current;
     if (!el) return;
 
+    // Respect prefers-reduced-motion — show final value immediately, no tween
+    const prefersReduced =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReduced) {
+      setDisplay(to);
+      onComplete?.();
+      return;
+    }
+
     const obj = { val: from };
     const ctx = gsap.context(() => {
       gsap.to(obj, {

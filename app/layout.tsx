@@ -72,6 +72,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${prompt.variable} ${kanit.variable} ${sarabun.variable} ${notoThai.variable} ${chakra.variable} ${barlow.variable} ${ibmSansThai.variable} ${jetbrains.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--base)] text-[var(--ink)] selection:bg-[var(--accent)] selection:text-[var(--accent-ink)]">
+        {/* Skip-to-main: first focusable element — WCAG 2.4.1 */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[9999] focus:inline-flex focus:items-center focus:gap-2 focus:rounded-[var(--radius)] focus:bg-[var(--accent)] focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-[var(--accent-ink)] focus:shadow-[var(--shadow-far)] focus:outline-none"
+        >
+          ข้ามไปเนื้อหาหลัก
+        </a>
         {children}
       </body>
     </html>
