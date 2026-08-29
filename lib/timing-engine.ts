@@ -18,6 +18,44 @@ export interface RfidRawPayload {
 }
 
 /**
+ * Standard Age Group Calculation
+ * Reference Date: RACE_DAY (default) or DEC_31_RACE_YEAR
+ * Brackets: < 18, 18-29, 30-39, 40-49, 50-59, 60+
+ */
+export function calculateRunnerAgeGroup(
+  birthdateStr?: string | null,
+  raceDate?: Date | string,
+  calcMethod: "RACE_DAY" | "DEC_31_RACE_YEAR" = "RACE_DAY"
+): string {
+  if (!birthdateStr) return "30-39";
+  const birthDate = new Date(birthdateStr);
+  if (isNaN(birthDate.getTime())) return "30-39";
+
+  const eventDate = raceDate ? new Date(raceDate) : new Date();
+  let refDate: Date;
+
+  if (calcMethod === "DEC_31_RACE_YEAR") {
+    refDate = new Date(eventDate.getFullYear(), 11, 31);
+  } else {
+    // RACE_DAY
+    refDate = eventDate;
+  }
+
+  let age = refDate.getFullYear() - birthDate.getFullYear();
+  const m = refDate.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && refDate.getDate() < birthDate.getDate())) {
+    age--;
+  }
+
+  if (age < 18) return "ต่ำกว่า 18";
+  if (age <= 29) return "18-29";
+  if (age <= 39) return "30-39";
+  if (age <= 49) return "40-49";
+  if (age <= 59) return "50-59";
+  return "60+";
+}
+
+/**
  * RFID Timing Engine Pipeline
  * 1. RFID Reader Mat Trigger
  * 2. Checkpoint Association
@@ -108,18 +146,9 @@ export async function processRfidDetection(payload: RfidRawPayload) {
     second: "2-digit",
   }) + " น.";
 
-  // Determine age group from birthdate
-  let ageGroup = "30-39";
-  if (runnerUser.birthdate) {
-    const birthYear = new Date(runnerUser.birthdate).getFullYear();
-    const age = new Date().getFullYear() - birthYear;
-    if (age < 20) ageGroup = "ต่ำกว่า 20";
-    else if (age <= 29) ageGroup = "20-29";
-    else if (age <= 39) ageGroup = "30-39";
-    else if (age <= 49) ageGroup = "40-49";
-    else if (age <= 59) ageGroup = "50-59";
-    else ageGroup = "60 ปีขึ้นไป";
-  }
+  // Determine age group based on event's age calculation criteria (RACE_DAY or DEC_31_RACE_YEAR)
+  const ageCalcMethod = (event.ageCalculationMethod as "RACE_DAY" | "DEC_31_RACE_YEAR") || "RACE_DAY";
+  const ageGroup = calculateRunnerAgeGroup(runnerUser.birthdate, event.date, ageCalcMethod);
 
   // 4. Check existing result or insert new
   const existingResult = await db

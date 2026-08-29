@@ -127,15 +127,30 @@ erDiagram
 - **`date`** (TIMESTAMPTZ): วันและเวลาแข่งขัน
 - **`distance`** (TEXT): ข้อความสรุประยะทาง (เช่น "5 / 10 / 21 KM")
 - **`price`** (INTEGER): ราคาเริ่มต้น (บาท)
-- **`status`** (TEXT): สถานะรับสมัคร (`open`, `closed`)
+- **`event_status`** (TEXT): สถานะวงจรชีวิตงานวิ่ง (`DRAFT` → `PENDING_APPROVAL` → `APPROVED` → `REGISTRATION_OPEN` → `REGISTRATION_CLOSED` → `RACE_DAY` → `RESULT_PROCESSING` → `COMPLETED` → `ARCHIVED`)
+- **`approval_status`** (TEXT): สถานะการพิจารณาอนุมัติคำขอ (`PENDING`, `APPROVED`, `REJECTED`)
+- **`age_calculation_method`** (TEXT): เกณฑ์คำนวณอายุ (`RACE_DAY` คำนวณ ณ วันแข่งขันจริง หรือ `DEC_31_RACE_YEAR` คำนวณ ณ 31 ธ.ค. ของปีที่จัดงาน)
 - **`image`** (TEXT): ภาพแบนเนอร์ความคมชัดสูง
 - **`organizer_id`** (TEXT): รหัสผู้จัดงาน
 - **`organizer_name`** (TEXT): ชื่อองค์กร / สโมสรผู้จัด
 - **`organizer_contact`** (TEXT): ข้อมูลติดต่อผู้จัดงาน
-- **`approval_status`** (TEXT): สถานะการอนุมัติ (`pending`, `approved`, `rejected`)
 
 #### 5. `event_categories`
-ตารางจำแนกหมวดหมู่ระยะทางและโควตาผู้เข้าร่วม
+ตารางจำแนกหมวดหมู่ระยะทางและโครงสร้างลำดับชั้น (Hierarchical Category Architecture)
+```
+EVENT
+ ├── 5K (Fun Run)
+ │    ├── Male (18-29, 30-39, 40-49, 50-59, 60+)
+ │    └── Female (18-29, 30-39, 40-49, 50-59, 60+)
+ │
+ ├── 10K (Mini Marathon)
+ │    ├── Male (18-29, 30-39, 40-49, 50-59, 60+)
+ │    └── Female (18-29, 30-39, 40-49, 50-59, 60+)
+ │
+ └── Half Marathon (21.1K)
+      ├── Male (18-29, 30-39, 40-49, 50-59, 60+)
+      └── Female (18-29, 30-39, 40-49, 50-59, 60+)
+```
 - **`id`** (UUID, PK): รหัส Category
 - **`event_id`** (UUID, FK -> `events.id`): รหัสงานวิ่ง
 - **`name`** (TEXT): ชื่อระยะ (เช่น "Half Marathon 21.1 KM")
@@ -143,8 +158,13 @@ erDiagram
 - **`price`** (INTEGER): ค่าสมัครของระยะนั้นๆ
 - **`slots`** (INTEGER): จำนวนโควตารับสมัครทั้งหมด
 - **`registered_count`** (INTEGER): ยอดผู้สมัครปัจจุบัน
+- **`bib_prefix`** (TEXT): รหัสขึ้นต้นเบอร์ BIB (เช่น "HM", "MN", "FR")
+- **`bib_start_number`** / **`bib_end_number`** (INTEGER): ช่วงหมายเลข BIB ประจำระยะ (เช่น 1001 - 1999)
 - **`cut_off_time_minutes`** (INTEGER): เวลาตัดตัว (Cut-off Time) เช่น 210 นาที
 - **`start_time`** (TEXT): เวลาปล่อยตัว (เช่น "05:00 น.")
+- **`allowed_age_groups`** (TEXT): รุ่นอายุที่เปิดรับ (`["18-29", "30-39", "40-49", "50-59", "60+"]`)
+- **`gender_options`** (TEXT): เพศที่เปิดรับ (`["male", "female"]`)
+- **`tshirt_design_url`** (TEXT): รูปแบบเสื้อประจำระยะ
 
 #### 6. `event_checkpoints`
 ตารางบันทึกจุดเช็คพอยต์ timing mats และจุดบริการทางการแพทย์/ให้น้ำ
@@ -195,7 +215,8 @@ erDiagram
 - **`corral`** (TEXT): กลุ่มปล่อยตัว (เช่น "CORRAL A")
 - **`distance`** (TEXT): ระยะทางที่ลงแข่ง (เช่น "21 KM")
 - **`tshirt_size`** (TEXT): ไซส์เสื้อวิ่ง
-- **`status`** (TEXT): สถานะบัตร (`upcoming`, `completed`, `cancelled`)
+- **`registration_status`** (TEXT): สถานะใบสมัครแยกเด็ดขาด (`UPCOMING`, `CHECKED_IN`, `TRANSFERRED`, `CANCELLED`, `COMPLETED`)
+- **`age_group`** (TEXT): รุ่นอายุของนักวิ่ง (`18-29`, `30-39`, `40-49`, `50-59`, `60+`)
 - **`chip_code`** (TEXT): รหัสชิปจับเวลา RFID
 - **`shipping_status`** (TEXT): วิธีรับอุปกรณ์ (`pickup` รับหน้างาน, `delivered` ส่งไปรษณีย์)
 - **`tracking_number`** (TEXT): หมายเลขพัสดุ
@@ -212,17 +233,23 @@ erDiagram
 - **`unit_price`** (INTEGER): ราคาต่อหน่วย
 - **`quantity`** (INTEGER): จำนวน
 
-#### 12. `registration_transfers`
-ตารางบันทึกประวัติการโอนสิทธิ์เบอร์วิ่งให้ผู้อื่น
-- **`id`** (UUID, PK): รหัสการโอนสิทธิ์
-- **`registration_id`** (UUID, FK -> `registrations.id`): ใบลงทะเบียนที่ถูกโอน
-- **`from_user_id`** (TEXT, FK -> `user.id`): ผู้โอนสิทธิ์
-- **`to_user_id`** (TEXT, FK -> `user.id`): บัญชีผู้รับโอน (ถ้ามี)
-- **`to_runner_name`** (TEXT): ชื่อ-นามสกุลผู้รับสิทธิ์คนใหม่
-- **`to_runner_phone`** (TEXT): เบอร์โทรศัพท์ผู้รับสิทธิ์คนใหม่
-- **`old_chip_code`** (TEXT): รหัสชิป RFID เดิม
-- **`new_chip_code`** (TEXT): รหัสชิป RFID ใหม่ที่ออกให้
-- **`transferred_at`** (TIMESTAMPTZ): วันเวลาที่โอนสิทธิ์สำเร็จ
+#### 12. `bib_transfers` (BIB_TRANSFER History Log)
+ตารางบันทึกประวัติการโอนสิทธิ์เบอร์วิ่งอย่างครบถ้วน (Audit History)
+```
+BIB_TRANSFER
+├── id (UUID, Primary Key)
+├── registration_id (UUID, FK -> registrations.id)
+├── from_user_id (TEXT, FK -> user.id: ผู้โอน)
+├── to_user_id (TEXT, FK -> user.id: ผู้รับโอน)
+├── old_bib (TEXT: หมายเลข BIB เดิม)
+├── new_bib (TEXT: หมายเลข BIB ใหม่)
+├── old_chip (TEXT: รหัสชิป RFID เดิม)
+├── new_chip (TEXT: รหัสชิป RFID ใหม่)
+├── reason (TEXT: เหตุผลการโอนสิทธิ์)
+├── status (TEXT: สถานะ PENDING, COMPLETED, CANCELLED)
+├── created_at (TIMESTAMPTZ: วันเวลาที่ส่งคำขอ)
+└── completed_at (TIMESTAMPTZ: วันเวลาที่โอนสิทธิ์เสร็จสิ้น)
+```
 
 #### 13. `registration_cancellations`
 ตารางบันทึกการขอยกเลิกบัตรวิ่งและประวัติการคืนเงิน (Refund Log)
@@ -470,7 +497,52 @@ RACE_RESULT
 
 ---
 
-## 2. ระดับผู้ใช้งานและสิทธิ์การเข้าถึง
+## 2. การจำแนกสถานะและวงจรชีวิตของระบบ (State Machine & Lifecycles)
+
+เพื่อความถูกต้องและเป็นระบบ ไม่นำสถานะหลายเรื่องมาปะปนกัน ระบบจึงแยก State ออกเป็น 3 กลุ่มอิสระ:
+
+```mermaid
+stateDiagram-v2
+    [*] --> DRAFT : สร้างแบบร่างงานวิ่ง
+    DRAFT --> PENDING_APPROVAL : สมาชิกยื่นขอจัดงาน
+    PENDING_APPROVAL --> APPROVED : Admin อนุมัติ
+    PENDING_APPROVAL --> REJECTED : Admin ปฏิเสธ
+    APPROVED --> REGISTRATION_OPEN : เปิดรับสมัครนักวิ่ง
+    REGISTRATION_OPEN --> REGISTRATION_CLOSED : ปิดรับสมัคร / ยอดเต็ม
+    REGISTRATION_CLOSED --> RACE_DAY : ถึงวันจัดงานแข่งขัน
+    RACE_DAY --> RESULT_PROCESSING : ปล่อยตัว & รับสัญญาณ RFID
+    RESULT_PROCESSING --> COMPLETED : ยืนยันผลสถิติ & มอบรางวัล
+    COMPLETED --> ARCHIVED : จัดเก็บประวัติงาน
+```
+
+### ตารางเปรียบเทียบการแยก State อิสระ (Distinct State Separation):
+
+| กลุ่มสถานะ (State Type) | คอลัมน์ใน DB | ค่าที่เป็นไปได้ (Values) | ความหมายและบริบทการใช้งาน |
+| :--- | :--- | :--- | :--- |
+| **1. สถานะงานวิ่ง (Event Lifecycle)** | `events.event_status` | `DRAFT`<br>`PENDING_APPROVAL`<br>`APPROVED`<br>`REGISTRATION_OPEN`<br>`REGISTRATION_CLOSED`<br>`RACE_DAY`<br>`RESULT_PROCESSING`<br>`COMPLETED`<br>`ARCHIVED` | วงจรชีวิตของงานวิ่งตั้งแต่เริ่มร่าง ยื่นขอ เปิดรับสมัคร จนถึงวันแข่งและการจัดเก็บประวัติ |
+| **2. สถานะการพิจารณา (Approval Status)** | `events.approval_status`<br>`organizer_requests.status` | `PENDING`<br>`APPROVED`<br>`REJECTED` | การตัดสินใจของ Admin ต่อคำขอจัดงานวิ่ง |
+| **3. สถานะใบสมัครนักวิ่ง (Registration Status)** | `registrations.registration_status` | `UPCOMING`<br>`CHECKED_IN`<br>`TRANSFERRED`<br>`CANCELLED`<br>`COMPLETED` | สถานะของบัตรวิ่งรายคน (รอแข่ง, รับอุปกรณ์แล้ว, โอนสิทธิ์แล้ว, ยกเลิก, หรือเข้าเส้นชัยแล้ว) |
+
+---
+
+## 3. มาตรฐานการแบ่งรุ่นอายุและการคำนวณสถิติ (Standard Age Groups)
+
+### กลุ่มรุ่นอายุมาตรฐานสากล (Standard Age Brackets):
+1. **ต่ำกว่า 18 ปี** (`< 18`) (สำหรับระยะ Fun Run)
+2. **18–29 ปี** (`18-29`)
+3. **30–39 ปี** (`30-39`)
+4. **40–49 ปี** (`40-49`)
+5. **50–59 ปี** (`50-59`)
+6. **60 ปีขึ้นไป** (`60+`)
+
+### เกณฑ์การคำนวณอายุ (Age Calculation Reference Date):
+ระบบรองรับการกำหนดเกณฑ์คำนวณอายุ 2 แบบตามมาตรฐานสมาคมกรีฑา:
+- **`RACE_DAY` (ค่าเริ่มต้น)**: คำนวณอายุของนักวิ่ง ณ วันแข่งขันจริง (`Event Date - Runner Birthdate`)
+- **`DEC_31_RACE_YEAR`**: คำนวณอายุของนักวิ่ง ณ วันที่ 31 ธันวาคม ของปีที่จัดการแข่งขัน (ตามเกณฑ์ World Athletics)
+
+---
+
+## 4. ระดับผู้ใช้งานและสิทธิ์การเข้าถึง (User Roles & Permissions)
 
 ระบบแบ่งสิทธิ์ผู้ใช้งานออกเป็น 3 บทบาท:
 

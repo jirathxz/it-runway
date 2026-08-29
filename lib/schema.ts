@@ -27,26 +27,39 @@ export const events = pgTable("events", {
   date: timestamp("date", { withTimezone: true }).notNull(),
   distance: text("distance").notNull(), // e.g. "5 / 10 / 21 KM"
   price: integer("price").notNull(), // 650
-  status: text("status").notNull().default("open"), // open, closed
+  
+  // Distinct Lifecycle Status
+  eventStatus: text("event_status").notNull().default("REGISTRATION_OPEN"), // DRAFT, PENDING_APPROVAL, APPROVED, REGISTRATION_OPEN, REGISTRATION_CLOSED, RACE_DAY, RESULT_PROCESSING, COMPLETED, ARCHIVED
+  approvalStatus: text("approval_status").notNull().default("APPROVED"), // PENDING, APPROVED, REJECTED
+  status: text("status").notNull().default("open"), // Legacy compatibility: open, closed
+  
+  // Age calculation criteria
+  ageCalculationMethod: text("age_calculation_method").notNull().default("RACE_DAY"), // RACE_DAY (อายุ ณ วันแข่ง) หรือ DEC_31_RACE_YEAR (อายุ ณ 31 ธ.ค. ปีที่จัดงาน)
+  
   image: text("image"),
   organizerId: text("organizer_id"),
   organizerName: text("organizer_name"),
   organizerContact: text("organizer_contact"),
-  approvalStatus: text("approval_status").notNull().default("approved"), // pending, approved, rejected
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// 2. event_categories
+// 2. event_categories (Hierarchical Category Architecture: Event -> Distance -> Gender -> Age Groups)
 export const eventCategories = pgTable("event_categories", {
   id: uuid("id").primaryKey().defaultRandom(),
   eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
-  name: text("name").notNull(), // e.g. "Half Marathon (21.1K)", "Mini Marathon (10.5K)"
+  name: text("name").notNull(), // e.g. "Half Marathon (21.1K)", "Mini Marathon (10.5K)", "Fun Run (5K)"
   distanceKm: decimal("distance_km", { precision: 5, scale: 2 }).notNull(),
   price: integer("price").notNull(),
   slots: integer("slots").notNull().default(500),
   registeredCount: integer("registered_count").notNull().default(0),
+  bibPrefix: text("bib_prefix").default("HM"), // e.g. "HM", "MN", "FR"
+  bibStartNumber: integer("bib_start_number").default(1001),
+  bibEndNumber: integer("bib_end_number").default(1999),
   cutOffTimeMinutes: integer("cut_off_time_minutes").default(180),
   startTime: text("start_time").notNull().default("05:00 น."),
+  allowedAgeGroups: text("allowed_age_groups").default('["18-29", "30-39", "40-49", "50-59", "60+"]'), // Standard Age Groups
+  genderOptions: text("gender_options").default('["male", "female"]'),
+  tshirtDesignUrl: text("tshirt_design_url"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -108,7 +121,12 @@ export const registrations = pgTable("registrations", {
   corral: text("corral").notNull().default("CORRAL A"),
   distance: text("distance").notNull(),
   tshirtSize: text("tshirt_size").notNull().default("L"),
-  status: text("status").notNull().default("upcoming"), // upcoming, completed, cancelled
+  
+  // Clean Registration Status Separation
+  registrationStatus: text("registration_status").notNull().default("UPCOMING"), // UPCOMING, CHECKED_IN, TRANSFERRED, CANCELLED, COMPLETED
+  status: text("status").notNull().default("upcoming"), // Legacy compatibility: upcoming, completed, cancelled
+  ageGroup: text("age_group").default("30-39"), // 18-29, 30-39, 40-49, 50-59, 60+
+  
   chipCode: text("chip_code").notNull(),
   shippingStatus: text("shipping_status").notNull().default("pickup"), // delivered, pickup, completed
   trackingNumber: text("tracking_number"),
@@ -132,20 +150,24 @@ export const registrationItems = pgTable("registration_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-// 9. registration_transfers
-export const registrationTransfers = pgTable("registration_transfers", {
+// 9. bib_transfers (BIB_TRANSFER with complete audit history)
+export const bibTransfers = pgTable("bib_transfers", {
   id: uuid("id").primaryKey().defaultRandom(),
   registrationId: uuid("registration_id").notNull().references(() => registrations.id, { onDelete: "cascade" }),
   fromUserId: text("from_user_id").notNull().references(() => user.id),
   toUserId: text("to_user_id").references(() => user.id),
-  toRunnerName: text("to_runner_name").notNull(),
-  toRunnerPhone: text("to_runner_phone").notNull(),
-  toRunnerEmail: text("to_runner_email"),
-  oldChipCode: text("old_chip_code"),
-  newChipCode: text("new_chip_code").notNull(),
+  oldBib: text("old_bib").notNull(),
+  newBib: text("new_bib").notNull(),
+  oldChip: text("old_chip").notNull(),
+  newChip: text("new_chip").notNull(),
   reason: text("reason"),
-  transferredAt: timestamp("transferred_at", { withTimezone: true }).defaultNow().notNull(),
+  status: text("status").notNull().default("COMPLETED"), // PENDING, COMPLETED, CANCELLED
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// Alias for backwards compatibility
+export const registrationTransfers = bibTransfers;
 
 // 10. registration_cancellations
 export const registrationCancellations = pgTable("registration_cancellations", {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { registrations, user, events } from "@/lib/schema";
+import { registrations, user, events, bibTransfers } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
@@ -101,8 +101,24 @@ export async function POST(req: NextRequest) {
       .set({
         userId: targetUserId,
         chipCode: updatedChipCode,
+        registrationStatus: "TRANSFERRED",
       })
       .where(eq(registrations.id, registrationId));
+
+    // Insert full BIB_TRANSFER history record
+    await db.insert(bibTransfers).values({
+      registrationId: reg.id,
+      fromUserId: session.user.id,
+      toUserId: targetUserId,
+      oldBib: reg.bibNumber,
+      newBib: reg.bibNumber,
+      oldChip: reg.chipCode,
+      newChip: updatedChipCode,
+      reason: transferReason || "โอนสิทธิ์ให้นักวิ่งท่านอื่น",
+      status: "COMPLETED",
+      createdAt: new Date(),
+      completedAt: new Date(),
+    });
 
     // If new user was found, update their profile with emergency data if missing
     if (targetUserId !== reg.userId) {
