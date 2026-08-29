@@ -19,13 +19,11 @@ import {
   Ticket,
   Calendar,
   Trophy,
-  Flame,
-  X,
   Compass,
-  Sparkles,
   Home,
   QrCode,
   Bell,
+  PlusCircle,
   type LucideIcon,
 } from "lucide-react";
 import { SearchCommandDialog } from "@/components/search/search-command-dialog";
@@ -51,23 +49,21 @@ const defaultNavItems: NavItem[] = [
     label: "ค้นหางานวิ่ง",
     href: "/events",
     icon: Compass,
-    badge: "32 OPEN",
+    badge: "32",
     badgeVariant: "default",
     number: "02",
   },
   {
-    label: "ปฏิทิน 2026",
+    label: "ปฏิทิน",
     href: "/calendar",
     icon: Calendar,
-    badge: "2026",
-    badgeVariant: "secondary",
     number: "03",
   },
   {
     label: "ผลการแข่งขัน",
     href: "/results",
     icon: Trophy,
-    badge: "CHIP",
+    badge: "LIVE",
     badgeVariant: "success",
     number: "04",
   },
@@ -86,12 +82,17 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const [searchOpen, setSearchOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
   const [notifOpen, setNotifOpen] = React.useState(false);
   const [unreadNotifCount, setUnreadNotifCount] = React.useState(0);
 
   const userMenuRef = React.useRef<HTMLDivElement>(null);
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [organizerStatus, setOrganizerStatus] = React.useState<{
+    isLoggedIn: boolean;
+    isOrganizer: boolean;
+    role: string;
+    eventsCount: number;
+    participantsCount: number;
+  } | null>(null);
 
   // Fetch unread notifications count
   React.useEffect(() => {
@@ -102,6 +103,20 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
           const payload = json.data || json;
           if (payload.counts) {
             setUnreadNotifCount(payload.counts.unread || 0);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
+
+  // Fetch organizer status
+  React.useEffect(() => {
+    if (session?.user) {
+      fetch("/api/organizer/status")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.isLoggedIn) {
+            setOrganizerStatus(data);
           }
         })
         .catch(() => {});
@@ -123,7 +138,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Close menus on Escape key
+  // Close menus on Escape key & shortcut ⌘K
   React.useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -140,13 +155,6 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Focus search input when modal opens
-  React.useEffect(() => {
-    if (searchOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 50);
-    }
-  }, [searchOpen]);
-
   // Lock body scroll when mobile menu is open
   React.useEffect(() => {
     if (mobileOpen) {
@@ -159,24 +167,11 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
     };
   }, [mobileOpen]);
 
-  const [organizerStatus, setOrganizerStatus] = React.useState<{
-    isOrganizer: boolean;
-    role: string;
-    roleLabel: string;
-  } | null>(null);
-
+  // Close mobile drawer on route change
   React.useEffect(() => {
-    if (session?.user) {
-      fetch("/api/organizer/status")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.isLoggedIn) {
-            setOrganizerStatus(data);
-          }
-        })
-        .catch(() => {});
-    }
-  }, [session]);
+    setMobileOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname]);
 
   const userRole = (session?.user as any)?.role || "member";
   const isAdmin = userRole === "admin";
@@ -194,34 +189,34 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
     <>
       <header
         className={cn(
-          "sticky top-0 z-50 w-full border-b border-[var(--line)] bg-[var(--base)]/92 backdrop-blur-[16px] transition-all duration-200",
+          "sticky top-0 z-50 w-full border-b border-[var(--line)] bg-[var(--base)]/95 backdrop-blur-[16px] transition-all duration-200",
           className
         )}
       >
-        <div className="mx-auto flex h-16 max-w-[var(--content-max)] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-16 max-w-[var(--content-max)] items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 lg:px-8">
           {/* Left: Brand Logo & Desktop Navigation */}
-          <div className="flex items-center gap-3 lg:gap-5 xl:gap-7 shrink-0">
+          <div className="flex items-center gap-3 lg:gap-4 xl:gap-6 shrink-0">
             <Link
               href="/"
-              className="group flex items-center gap-2.5 rounded-[var(--radius)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] whitespace-nowrap shrink-0"
+              className="group flex items-center gap-2 rounded-[var(--radius)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] shrink-0"
               aria-label="IT Runway หน้าแรก"
               onClick={() => setMobileOpen(false)}
             >
               {/* Runway Emblem */}
-              <div className="relative flex size-9 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--accent)] text-[var(--accent-ink)] shadow-[var(--shadow-near)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
-                <Footprints className="size-5 stroke-[2.2]" aria-hidden="true" />
+              <div className="relative flex size-8.5 sm:size-9 shrink-0 items-center justify-center rounded-[var(--radius)] bg-[var(--accent)] text-[var(--accent-ink)] shadow-[var(--shadow-near)] transition-transform duration-200 group-hover:scale-105 group-active:scale-95">
+                <Footprints className="size-4.5 sm:size-5 stroke-[2.2]" aria-hidden="true" />
                 <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-[var(--positive)] ring-2 ring-[var(--base)] animate-pulse" />
               </div>
 
               {/* Title & Location Pill */}
-              <div className="flex items-center gap-1.5 whitespace-nowrap">
-                <span className="font-[var(--font-display)] text-lg font-extrabold tracking-tight text-[var(--ink)] whitespace-nowrap">
+              <div className="flex items-center gap-1.5">
+                <span className="font-[var(--font-display)] text-base sm:text-lg font-extrabold tracking-tight text-[var(--ink)]">
                   IT<span className="font-light text-[var(--ink-2)]"> RUNWAY</span>
                 </span>
                 <Badge
                   variant="surface"
                   size="sm"
-                  className="hidden sm:inline-flex border-[var(--line)] text-[9px] font-bold tracking-widest uppercase whitespace-nowrap shrink-0"
+                  className="hidden xl:inline-flex border-[var(--line)] text-[8.5px] font-bold tracking-wider uppercase"
                 >
                   NAKHON PATHOM
                 </Badge>
@@ -230,7 +225,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
 
             {/* Desktop Navigation Links */}
             <nav
-              className="hidden lg:flex items-center gap-1 xl:gap-1.5 shrink-0"
+              className="hidden lg:flex items-center gap-1 xl:gap-1.5"
               aria-label="เมนูหลัก"
             >
               {items.map((item) => {
@@ -243,9 +238,9 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                     key={item.label}
                     href={item.href}
                     className={cn(
-                      "group relative inline-flex items-center gap-1.5 rounded-[var(--radius)] px-3 py-1.5 font-[var(--font-text)] text-xs font-semibold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] whitespace-nowrap shrink-0",
+                      "group relative inline-flex items-center gap-1.5 rounded-[var(--radius)] px-2.5 py-1.5 xl:px-3 text-xs font-semibold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]",
                       isActive
-                        ? "bg-[var(--surface-2)] text-[var(--ink)] shadow-sm border border-[var(--line)]"
+                        ? "bg-[var(--surface-2)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
                         : "text-[var(--ink-2)] hover:bg-[var(--surface)] hover:text-[var(--ink)]"
                     )}
                   >
@@ -260,11 +255,11 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                         aria-hidden="true"
                       />
                     )}
-                    <span className="whitespace-nowrap">{item.label}</span>
+                    <span>{item.label}</span>
                     {item.badge && (
                       <span
                         className={cn(
-                          "rounded-md px-1.5 py-0.25 font-[var(--font-mono)] text-[9px] font-bold uppercase transition-transform group-hover:scale-105 whitespace-nowrap shrink-0",
+                          "hidden xl:inline-flex rounded-md px-1.5 py-0.25 font-[var(--font-mono)] text-[9px] font-bold uppercase transition-transform group-hover:scale-105",
                           item.badgeVariant === "default"
                             ? "bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30"
                             : item.badgeVariant === "success"
@@ -283,15 +278,16 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                 <Link
                   href="/organizer/checkin"
                   className={cn(
-                    "group relative inline-flex items-center gap-1.5 rounded-[var(--radius)] px-3 py-1.5 font-[var(--font-text)] text-xs font-bold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] whitespace-nowrap shrink-0 border",
+                    "group relative inline-flex items-center gap-1.5 rounded-[var(--radius)] px-2.5 py-1.5 xl:px-3 text-xs font-bold tracking-wide transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] border",
                     pathname.startsWith("/organizer/checkin")
-                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-sm"
+                      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/40 shadow-xs"
                       : "text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/25 bg-emerald-500/5"
                   )}
                 >
                   <QrCode className="size-3.5 shrink-0 text-emerald-400" />
-                  <span>ตรวจ BIB นักวิ่ง</span>
-                  <span className="rounded-md px-1.5 py-0.25 font-[var(--font-mono)] text-[9px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="hidden xl:inline">ตรวจ BIB นักวิ่ง</span>
+                  <span className="xl:hidden">ตรวจ BIB</span>
+                  <span className="hidden 2xl:inline-flex rounded-md px-1 py-0.25 font-[var(--font-mono)] text-[8.5px] font-bold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     GATE
                   </span>
                 </Link>
@@ -299,20 +295,20 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
             </nav>
           </div>
 
-          {/* Right: Quick Search, Auth Profile & Actions */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Right: Quick Search, Notification, Auth Profile & CTA */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Quick Search Trigger */}
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="flex h-9 items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] px-2.5 sm:px-3 text-xs text-[var(--ink-2)] transition-all hover:border-[var(--ink-3)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] whitespace-nowrap shrink-0 cursor-pointer"
+              className="flex h-9 items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] px-2 sm:px-2.5 xl:px-3 text-xs text-[var(--ink-2)] transition-all hover:border-[var(--ink-3)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer"
               aria-label="ค้นหางานวิ่ง (Ctrl+K)"
             >
               <Search className="size-3.5 shrink-0 text-[var(--accent)]" />
-              <span className="hidden md:inline font-[var(--font-text)] whitespace-nowrap">
+              <span className="hidden xl:inline font-[var(--font-text)]">
                 ค้นหางานวิ่ง...
               </span>
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 rounded border border-[var(--line)] bg-[var(--surface-2)] px-1.5 py-0.5 font-[var(--font-mono)] text-[10px] text-[var(--ink-3)] whitespace-nowrap">
+              <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-[var(--line)] bg-[var(--surface-2)] px-1.5 py-0.5 font-[var(--font-mono)] text-[9px] text-[var(--ink-3)]">
                 ⌘K
               </kbd>
             </button>
@@ -342,35 +338,35 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen((prev) => !prev)}
-                  className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-1 sm:pr-2.5 transition-all hover:border-[var(--accent)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer whitespace-nowrap shrink-0"
+                  className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-1 2xl:pr-2.5 transition-all hover:border-[var(--accent)]/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer shrink-0"
                   aria-expanded={userMenuOpen}
                   aria-haspopup="true"
                   aria-label="เมนูผู้ใช้งาน"
                 >
-                  <Avatar className="size-7 sm:size-7.5 border-none shrink-0">
+                  <Avatar className="size-7 border-none shrink-0">
                     <AvatarImage
                       src={session.user.image || undefined}
                       alt={session.user.name}
                     />
                     <AvatarFallback>{userInitials}</AvatarFallback>
                   </Avatar>
-                  <div className="hidden md:flex flex-col text-left">
-                    <span className="max-w-[100px] truncate text-xs font-semibold text-[var(--ink)] leading-none whitespace-nowrap">
+                  <div className="hidden 2xl:flex flex-col text-left">
+                    <span className="max-w-[90px] truncate text-xs font-semibold text-[var(--ink)] leading-none">
                       {session.user.name}
                     </span>
-                    <span className="text-[10px] font-mono leading-none mt-0.5 whitespace-nowrap flex items-center gap-1">
+                    <span className="text-[9px] font-mono leading-none mt-0.5 flex items-center gap-1">
                       {isAdmin ? (
-                        <span className="text-[var(--accent)] font-bold flex items-center gap-1">
+                        <span className="text-[var(--accent)] font-bold flex items-center gap-0.5">
                           <Shield className="size-2.5" />
                           <span>ADMIN</span>
                         </span>
                       ) : isOrganizer ? (
-                        <span className="text-emerald-400 font-bold flex items-center gap-1">
+                        <span className="text-emerald-400 font-bold flex items-center gap-0.5">
                           <Footprints className="size-2.5" />
                           <span>ORGANIZER</span>
                         </span>
                       ) : (
-                        <span className="text-[var(--ink-3)] flex items-center gap-1">
+                        <span className="text-[var(--ink-3)] flex items-center gap-0.5">
                           <User className="size-2.5" />
                           <span>MEMBER</span>
                         </span>
@@ -388,7 +384,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                 {/* Dropdown Menu */}
                 {userMenuOpen && (
                   <div
-                    className="absolute right-0 mt-2 w-60 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-[var(--shadow-far)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 z-50"
+                    className="absolute right-0 mt-2 w-64 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] p-1.5 shadow-[var(--shadow-far)] backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 z-50"
                     role="menu"
                   >
                     {/* User Summary Header */}
@@ -423,7 +419,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                         <Link
                           href="/admin"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--accent)] hover:bg-[var(--surface-2)] font-bold transition-colors whitespace-nowrap"
+                          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--accent)] hover:bg-[var(--surface-2)] font-bold transition-colors"
                           role="menuitem"
                         >
                           <Shield className="size-3.5 shrink-0" />
@@ -435,7 +431,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                         <Link
                           href="/organizer/checkin"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-emerald-400 hover:bg-[var(--surface-2)] font-bold transition-colors whitespace-nowrap"
+                          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-emerald-400 hover:bg-[var(--surface-2)] font-bold transition-colors"
                           role="menuitem"
                         >
                           <QrCode className="size-3.5 shrink-0" />
@@ -446,17 +442,17 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                       <Link
                         href="/organize"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors whitespace-nowrap"
+                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors"
                         role="menuitem"
                       >
-                        <Calendar className="size-3.5 shrink-0 text-[var(--ink-3)]" />
+                        <PlusCircle className="size-3.5 shrink-0 text-[var(--accent)]" />
                         <span>ยื่นคำขอจัดงานวิ่ง</span>
                       </Link>
 
                       <Link
                         href="/account"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors whitespace-nowrap"
+                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors"
                         role="menuitem"
                       >
                         <User className="size-3.5 shrink-0 text-[var(--ink-3)]" />
@@ -466,7 +462,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                       <Link
                         href="/account/bibs"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors whitespace-nowrap"
+                        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)] transition-colors"
                         role="menuitem"
                       >
                         <Ticket className="size-3.5 shrink-0 text-[var(--ink-3)]" />
@@ -481,7 +477,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left cursor-pointer whitespace-nowrap"
+                        className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left cursor-pointer"
                         role="menuitem"
                       >
                         <LogOut className="size-3.5 shrink-0" />
@@ -495,20 +491,20 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
               <div className="hidden sm:flex items-center gap-2 shrink-0">
                 <Link
                   href="/auth/sign-in"
-                  className="inline-flex h-9 items-center justify-center rounded-[var(--radius)] px-3 text-xs font-semibold text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface)] transition-all whitespace-nowrap shrink-0"
+                  className="inline-flex h-9 items-center justify-center rounded-[var(--radius)] px-3 text-xs font-semibold text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface)] transition-all shrink-0"
                 >
                   เข้าสู่ระบบ
                 </Link>
               </div>
             )}
 
-            {/* Primary CTA (Desktop & Tablet) */}
+            {/* Primary CTA (Desktop XL only to avoid navbar overcrowding on laptops) */}
             <Button
               asChild
               size="sm"
-              className="hidden sm:inline-flex h-9 font-bold text-xs whitespace-nowrap shrink-0"
+              className="hidden xl:inline-flex h-9 font-bold text-xs shrink-0"
             >
-              <Link href="/organize" className="inline-flex items-center gap-1.5 whitespace-nowrap">
+              <Link href="/organize" className="inline-flex items-center gap-1.5">
                 <span>จัดงานวิ่ง</span>
                 <ChevronRight className="size-3.5 shrink-0 stroke-[2.5]" />
               </Link>
@@ -521,7 +517,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
               aria-expanded={mobileOpen}
               aria-controls="mobile-navigation-drawer"
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="flex size-10 min-h-[44px] min-w-[44px] items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--surface-2)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:hidden cursor-pointer"
+              className="flex size-9 min-h-[38px] min-w-[38px] items-center justify-center rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] transition-colors hover:bg-[var(--surface-2)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] lg:hidden cursor-pointer shrink-0"
             >
               <div className="relative size-4" aria-hidden="true">
                 <span
@@ -607,7 +603,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                           <Icon className="size-3.5" aria-hidden="true" />
                         </div>
                       )}
-                      <span className="font-[var(--font-text)] whitespace-nowrap">{item.label}</span>
+                      <span className="font-[var(--font-text)]">{item.label}</span>
                     </div>
                     {item.badge && (
                       <Badge
@@ -686,12 +682,12 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                   )}
                   <Button
                     asChild
-                    variant="outline"
+                    variant="default"
                     size="sm"
-                    className="h-10 text-xs col-span-2 text-[var(--accent)]"
+                    className="h-10 text-xs col-span-2 font-bold"
                   >
                     <Link href="/organize" onClick={() => setMobileOpen(false)}>
-                      <Calendar className="size-3.5" />
+                      <PlusCircle className="size-3.5" />
                       <span>ยื่นคำขอจัดงานวิ่ง</span>
                     </Link>
                   </Button>
