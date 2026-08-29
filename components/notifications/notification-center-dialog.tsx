@@ -271,7 +271,7 @@ export function NotificationCenterDialog({
                 className="h-9 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 shrink-0"
               >
                 <Send className={`size-3.5 ${triggering ? "animate-spin" : ""}`} />
-                <span>{triggering ? "กำลังส่ง..." : "⚡ ยิงทดสอบ"}</span>
+                <span>{triggering ? "กำลังส่ง..." : "ยิงทดสอบ"}</span>
               </Button>
             </div>
           </div>
@@ -348,7 +348,7 @@ export function NotificationCenterDialog({
             <div className="text-center py-12 text-[var(--ink-3)] space-y-2">
               <Bell className="size-10 mx-auto opacity-30" />
               <p className="text-sm font-bold">ไม่มีการแจ้งเตือนในหมวดหมู่นี้</p>
-              <p className="text-xs">กดปุ่ม "⚡ ยิงทดสอบ" ด้านบนเพื่อจำลองการส่งการแจ้งเตือน</p>
+              <p className="text-xs">กดปุ่ม "ยิงทดสอบ" ด้านบนเพื่อจำลองการส่งการแจ้งเตือน</p>
             </div>
           ) : (
             filteredNotifs.map((n) => {

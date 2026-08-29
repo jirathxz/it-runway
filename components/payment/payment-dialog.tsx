@@ -29,6 +29,7 @@ import {
   ChevronRight,
   Ticket,
   Zap,
+  XCircle,
   Sparkles,
   User,
   Save,
@@ -246,9 +247,10 @@ export function PaymentDialog({
                     {completeness.missing.map((m) => (
                       <span
                         key={m.key}
-                        className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 text-[10px] font-mono border border-amber-500/30"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-200 text-[10px] font-mono border border-amber-500/30"
                       >
-                        ✕ ขาด: {m.label}
+                        <XCircle className="size-2.5 text-amber-300 shrink-0" />
+                        <span>ขาด: {m.label}</span>
                       </span>
                     ))}
                   </div>
@@ -266,7 +268,7 @@ export function PaymentDialog({
                       className="h-8 px-3 font-bold text-xs bg-amber-500 hover:bg-amber-400 text-black shadow-sm cursor-pointer"
                     >
                       <Zap className="size-3.5 mr-1" />
-                      <span>⚡ กรอก Demo ทั้งหมด & ปลดล็อก</span>
+                      <span>กรอก Demo ทั้งหมด & ปลดล็อก</span>
                     </Button>
                   </div>
 

@@ -514,7 +514,12 @@ export function EventDetailView({ event, detailData }: EventDetailViewProps) {
                           >
                             <td className="py-2.5 px-3 font-bold text-[var(--ink)] flex items-center gap-2">
                               <span>{sz.size}</span>
-                              {isSelected && <span className="text-[10px] text-[var(--accent)] font-sans">✓ เลือกอยู่</span>}
+                              {isSelected && (
+                                <span className="inline-flex items-center gap-1 text-[10px] text-[var(--accent)] font-sans font-bold">
+                                  <Check className="size-3" />
+                                  <span>เลือกอยู่</span>
+                                </span>
+                              )}
                             </td>
                             <td className="py-2.5 px-3 text-[var(--ink-2)]">
                               {sizeUnit === "inch" ? `${sz.chestInch}"` : `${sz.chestCm} cm`}
@@ -762,11 +767,17 @@ export function EventDetailView({ event, detailData }: EventDetailViewProps) {
                 </h3>
                 <div className="flex flex-col gap-3">
                   <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] flex flex-col gap-2">
-                    <span className="text-xs font-bold text-[var(--ink)]">🏆 ถ้วยรางวัล Overall (อันดับที่ 1-3 ชาย และ หญิง)</span>
+                    <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                      <Trophy className="size-3.5 text-amber-400 shrink-0" />
+                      <span>ถ้วยรางวัล Overall (อันดับที่ 1-3 ชาย และ หญิง)</span>
+                    </span>
                     <span className="text-xs text-[var(--ink-2)]">มอบถ้วยรางวัลเกียรติยศประจำจังหวัดนครปฐม ตัดสินด้วยเวลา Gun Time อย่างเป็นทางการ</span>
                   </div>
                   <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--surface-2)] flex flex-col gap-2">
-                    <span className="text-xs font-bold text-[var(--ink)]">🥇 ถ้วยรางวัลตามกลุ่มอายุ (Age Group Categories)</span>
+                    <span className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
+                      <Medal className="size-3.5 text-amber-400 shrink-0" />
+                      <span>ถ้วยรางวัลตามกลุ่มอายุ (Age Group Categories)</span>
+                    </span>
                     <span className="text-xs text-[var(--ink-2)]">อันดับ 1-3 ในแต่ละกลุ่มอายุ (18-29, 30-39, 40-49, 50-59, 60 ปีขึ้นไป)</span>
                   </div>
                 </div>

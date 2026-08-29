@@ -164,7 +164,14 @@ export function CertificateDialog({
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
           <span className="text-xs text-[var(--ink-3)] font-mono">
-            {downloaded ? "✓ ดาวน์โหลดไฟล์สำเร็จแล้ว" : "รองรับไฟล์ภาพความละเอียดสูง (1600x1130 px)"}
+            {downloaded ? (
+              <span className="inline-flex items-center gap-1 text-emerald-400 font-bold">
+                <CheckCircle2 className="size-3.5 shrink-0" />
+                <span>ดาวน์โหลดไฟล์สำเร็จแล้ว</span>
+              </span>
+            ) : (
+              "รองรับไฟล์ภาพความละเอียดสูง (1600x1130 px)"
+            )}
           </span>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button

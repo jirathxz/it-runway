@@ -301,8 +301,9 @@ export function RunnerPhotosView() {
               </div>
 
               <div className="pt-2 border-t border-[var(--line)] flex items-center justify-between">
-                <span className="text-[10px] text-[var(--ink-3)] font-mono truncate max-w-[120px]">
-                  📷 {photo.photographer}
+                <span className="inline-flex items-center gap-1 text-[10px] text-[var(--ink-3)] font-mono truncate max-w-[130px]">
+                  <Camera className="size-3 shrink-0" />
+                  <span className="truncate">{photo.photographer}</span>
                 </span>
                 <Button
                   type="button"

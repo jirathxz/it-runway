@@ -41,6 +41,9 @@ import {
   RefreshCw,
   HardDriveDownload,
   CloudUpload,
+  Crown,
+  UserCheck,
+  Zap,
 } from "lucide-react";
 import { QrScannerDialog } from "@/components/organizer/qr-scanner-dialog";
 import { ShirtBreakdownDialog } from "@/components/organizer/shirt-breakdown-dialog";
@@ -298,7 +301,7 @@ function OrganizerCheckInContent() {
           if (offRes.success) {
             setCheckinMessage({
               type: "success",
-              text: `⚡ [โหมดออฟไลน์] เช็คอิน BIB ${runner.bibNumber} สำเร็จแล้ว (บันทึกในเครื่อง รอซิงค์)`,
+              text: `[โหมดออฟไลน์] เช็คอิน BIB ${runner.bibNumber} สำเร็จแล้ว (บันทึกในเครื่อง รอซิงค์)`,
             });
             setParticipants((prev) =>
               prev.map((p) =>
@@ -500,9 +503,17 @@ function OrganizerCheckInContent() {
           {events.length > 0 ? (
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
               <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--ink-2)]">
-                <span className="text-[var(--accent)] font-bold">
-                  {(session?.user as any)?.role === "admin" ? "👑 สิทธิ์แอดมิน (ทุกงาน)" : "👤 งานที่คุณเป็นผู้จัด:"}
-                </span>
+                {(session?.user as any)?.role === "admin" ? (
+                  <span className="flex items-center gap-1 text-amber-400 font-bold">
+                    <Crown className="size-3.5" />
+                    <span>สิทธิ์แอดมิน (ทุกงาน):</span>
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[var(--accent)] font-bold">
+                    <UserCheck className="size-3.5" />
+                    <span>งานที่คุณเป็นผู้จัด:</span>
+                  </span>
+                )}
               </div>
               <div className="relative">
                 <select

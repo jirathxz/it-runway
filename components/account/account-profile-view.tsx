@@ -40,6 +40,7 @@ import {
   ImageIcon,
   Zap,
   Footprints,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import {
@@ -576,9 +577,10 @@ export function AccountProfileView() {
                       {completeness.missing.map((m) => (
                         <span
                           key={m.key}
-                          className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-200 text-[10px] font-mono border border-amber-500/30"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-200 text-[10px] font-mono border border-amber-500/30"
                         >
-                          ✕ {m.label}
+                          <XCircle className="size-2.5 text-amber-300 shrink-0" />
+                          <span>{m.label}</span>
                         </span>
                       ))}
                     </div>

@@ -160,7 +160,7 @@ export function ShirtBreakdownDialog({
       })
       .join("\n");
 
-    const text = `👕 สรุปยอดสั่งผลิตเสื้อวิ่ง\nงาน: ${eventTitle}\nยอดรวมทั้งหมด: ${breakdown.totalShirts} ตัว\n\nรายละเอียดแยกตามไซส์:\n${sizeSummaryLines}\n\n(อัปเดต ณ ${new Date().toLocaleString("th-TH")})`;
+    const text = `[รายงานสรุปยอดสั่งผลิตเสื้อวิ่ง]\nงาน: ${eventTitle}\nยอดรวมทั้งหมด: ${breakdown.totalShirts} ตัว\n\nรายละเอียดแยกตามไซส์:\n${sizeSummaryLines}\n\n(อัปเดต ณ ${new Date().toLocaleString("th-TH")})`;
 
     try {
       await navigator.clipboard.writeText(text);

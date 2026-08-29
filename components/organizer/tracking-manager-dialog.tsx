@@ -183,7 +183,7 @@ export function TrackingManagerDialog({
             ) : (
               <Zap className="size-3.5 text-blue-400" />
             )}
-            <span>⚡ สุ่มเลขพัสดุ Demo อัตโนมัติ</span>
+            <span>สุ่มเลขพัสดุ Demo อัตโนมัติ</span>
           </Button>
         </div>
 
