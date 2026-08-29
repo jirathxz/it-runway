@@ -747,7 +747,63 @@ NOTIFICATIONS
 
 ---
 
-## 11. ข้อมูลและบัญชีทดสอบในระบบ (Demo Accounts)
+## 11. กลยุทธ์และการทดสอบระบบแบบครอบคลุม (Comprehensive Testing Strategy & Test Automation) 🧪
+
+แพลตฟอร์ม IT RUNWAY มีชุดทดสอบอัตโนมัติครบถ้วนตามหลักการ Test Pyramid ครอบคลุมทั้ง Unit, Integration, Security, E2E, Load, และ Mobile Scanner:
+
+```
+                      / \
+                     /   \
+                    / E2E \   (Golden Path 7 ขั้นตอน)
+                   /-------\
+                  / Security\ (PDPA, RBAC, Break-glass Audit)
+                 /-----------\
+                / Integration \ (Transfer, Refund, Multi-Channel)
+               /---------------\
+              /      Unit       \ (Timing, Age Group, Math, Sync)
+             /-------------------\
+```
+
+### 11.1 รายละเอียดชุดทดสอบตามหมวดหมู่ (Test Suites Matrix):
+
+| หมวดหมู่การทดสอบ | ไฟล์ชุดทดสอบ | ขอบเขตการทดสอบและสิ่งที่ตรวจสอบ | คำสั่งรัน |
+| :--- | :--- | :--- | :--- |
+| **🥇 E2E Golden Path** | `tests/e2e/golden-runner-flow.test.mjs` | **7 ขั้นตอนหลักครบวงจร**:<br>1. ตรวจสอบ Profile 7 ฟิลด์<br>2. สมัครวิ่ง 21.1K<br>3. จำลองชำระเงิน PromptPay<br>4. ออกเลข BIB + RFID Chip<br>5. สแกนเช็คอินหน้างาน<br>6. คำนวณผล Chip/Gun Time & Rank<br>7. ออก e-Certificate 1600x1130px | `pnpm test:e2e` |
+| **📱 Mobile & QR Scanner** | `tests/e2e/qr-scanner-and-mobile.test.mjs` | การถอดรหัส QR Code หลายฟอร์แมต (URL, JSON, Numeric) และการปรับแต่ง Viewport สำหรับมือถือ/แท็บเล็ต | `pnpm test:e2e` |
+| **⏱️ Unit Tests (Timing & Age Group)** | `tests/unit/timing-agegroup.test.mjs` | การคำนวณอายุและรุ่นอายุ (`RACE_DAY`, `DEC_31_RACE_YEAR`), การแปลงเวลา Pace (นาที:วินาที/กม.), Gun vs Chip Time | `pnpm test:unit` |
+| **🌐 API Response Contract** | `tests/unit/api-response-contract.test.mjs` | ตรวจสอบโครงสร้าง Response `{ success, data, error }` และรหัสข้อผิดพลาด HTTP 400, 401, 403, 404, 409, 429, 500 | `pnpm test:unit` |
+| **🔴 Offline Sync & Conflict** | `tests/unit/offline-conflict-resolution.test.mjs` | การตรวจจับและแก้ปัญหาความขัดแย้ง: Earliest Timestamp Preservation, Idempotency, และ Flag กรณี BIB ถูกยกเลิก | `pnpm test:unit` |
+| **🔄 BIB Transfer & History** | `tests/integration/bib-transfer-history.test.mjs` | การสลับสิทธิ์เจ้าของ BIB, การออกรหัสชิป RFID ใหม่, และการบันทึกลงประวัติ `bib_transfers` | `pnpm test:integration` |
+| **💸 Cancellation & Refund** | `tests/integration/refund-and-cancellation.test.mjs` | กฎการขอยกเลิกงานวิ่ง, การป้องกันการยกเลิกงานที่แข่งจบแล้ว, และการออกเลขอ้างอิงคืนเงิน | `pnpm test:integration` |
+| **🔔 Multi-Channel Notifications** | `tests/integration/notification-multi-channel.test.mjs` | การยิงแจ้งเตือนข้าม 4 ช่องทาง (Email, SMS, Web Push, In-App) ครบทั้ง 9 Core Events | `pnpm test:integration` |
+| **🔒 Security & PDPA** | `tests/security/pdpa-data-minimization.test.mjs` | การ Mask ข้อมูลประวัติสุขภาพ (`medical_conditions`) และการปลดล็อกเฉพาะเหตุฉุกเฉิน (Break-Glass) | `pnpm test:security` |
+| **🛡️ RBAC & Audit Trail** | `tests/security/rbac-and-audit.test.mjs` | การจำกัดสิทธิ์ Admin vs Organizer vs User และความสมบูรณ์ของ Audit Log (WHO, WHAT, WHEN, FROM, TO, IP, USER AGENT) | `pnpm test:security` |
+| **⚡ Load & Stress Testing** | `tests/load/rfid-burst-load.test.mjs` | การประมวลผลการอ่านพรม RFID ความถี่สูง 5,000 คนพร้อมกัน และการประมวลผลแบบ Batch Ingestion | `pnpm test:load` |
+
+### 11.2 คำสั่งรันชุดทดสอบ (CLI Commands):
+```bash
+# รันชุดทดสอบทั้งหมด (All Suites)
+pnpm test
+
+# รันเฉพาะ Unit Tests
+pnpm test:unit
+
+# รันเฉพาะ Integration Tests
+pnpm test:integration
+
+# รันเฉพาะ Security & PDPA Tests
+pnpm test:security
+
+# รันเฉพาะ E2E Golden Path
+pnpm test:e2e
+
+# รันเฉพาะ Load & Stress Tests
+pnpm test:load
+```
+
+---
+
+## 12. ข้อมูลและบัญชีทดสอบในระบบ (Demo Accounts)
 
 | ประเภทบัญชี | อีเมล / ชื่อผู้ใช้ | รหัสผ่าน | สิทธิ์ (Role) |
 | :--- | :--- | :--- | :--- |
