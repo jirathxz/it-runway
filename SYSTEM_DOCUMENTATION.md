@@ -256,7 +256,21 @@ erDiagram
 - **`status`** (TEXT): สถานะชิป (`active`, `damaged`, `lost`)
 - **`last_read_time`** (TIMESTAMPTZ): เวลาตรวจจับสัญญาณล่าสุด
 
-#### 16. `checkins`
+#### 16. `rfid_reads` (RFID_READ)
+ตารางบันทึกสัญญาณสด Telemetry จากพรมเครื่องอ่าน RFID (RFID Reader Ingestion Stream)
+```
+RFID_READ
+├── id (UUID, PK)
+├── chip_id (TEXT: รหัสชิป EPC)
+├── bib_id (TEXT: หมายเลข BIB)
+├── checkpoint_id (UUID, FK -> event_checkpoints.id)
+├── event_id (UUID, FK -> events.id)
+├── detected_at (TIMESTAMPTZ: เวลาที่เสาอากาศตรวจพบ)
+├── reader_id (TEXT: รหัสเครื่องอ่าน เช่น READER-FINISH-MAT-01)
+└── raw_data (TEXT: JSON Payload เช่น RSSI, Antenna Port, Frequency)
+```
+
+#### 17. `checkins`
 ตารางประวัติการสแกนเข้างานหน้าประตูทางเข้า (Gate Access Logs)
 - **`id`** (UUID, PK): รหัสบันทึกการเข้างาน
 - **`registration_id`** (UUID, FK -> `registrations.id`): บัตร BIB
@@ -271,7 +285,7 @@ erDiagram
 
 ### 1.5 กลุ่มตารางการชำระเงินและธุรกรรม (Payments & Financials: 3 ตาราง)
 
-#### 17. `payments`
+#### 18. `payments`
 ตารางบันทึกยอดชำระเงินและใบเสร็จ
 - **`id`** (UUID, PK): รหัสการชำระเงิน
 - **`registration_id`** (UUID, FK -> `registrations.id`): ใบลงทะเบียน
@@ -280,7 +294,7 @@ erDiagram
 - **`payment_method`** (TEXT): ช่องทาง (`promptpay`, `credit_card`, `mobile_banking`, `wallet`)
 - **`status`** (TEXT): สถานะชำระเงิน (`completed`, `refunded`, `failed`)
 
-#### 18. `payment_transactions`
+#### 19. `payment_transactions`
 ตารางบันทึก Log การติดต่อสื่อสารกับ Payment Gateway
 - **`id`** (UUID, PK): รหัส Transaction
 - **`payment_id`** (UUID, FK -> `payments.id`): รหัสใบเสร็จ
@@ -288,7 +302,7 @@ erDiagram
 - **`gateway_provider`** (TEXT): ผู้ให้บริการเกตเวย์
 - **`gateway_status`** (TEXT): ผลตอบรับจากระบบการเงิน (`SUCCESS`)
 
-#### 19. `refunds`
+#### 20. `refunds`
 ตารางบันทึกการโอนเงินคืนแก่นักวิ่ง
 - **`id`** (UUID, PK): รหัสการคืนเงิน
 - **`payment_id`** (UUID, FK -> `payments.id`): ยอดชำระเดิม
@@ -298,20 +312,47 @@ erDiagram
 
 ---
 
-### 1.6 กลุ่มตารางผลการแข่งขันและสถิติเวลา (Race Results & Timing: 3 ตาราง)
+### 1.6 กลุ่มตารางผลการแข่งขันและสถิติเวลา (Race Results & Timing Pipeline)
 
-#### 20. `race_results`
+#### สถาปัตยกรรมการจับเวลา RFID (RFID Timing Pipeline Flow):
+```
+RFID Reader (พรมเสาอากาศ UHF)
+     ↓
+Checkpoint (จุดตรวจจับ / พรม)
+     ↓
+RFID Event (สัญญาณตรวจจับ)
+     ↓
+Timestamp (บันทึกเวลา Millisecond)
+     ↓
+Runner / BIB (แมปข้อมูลนักวิ่ง)
+     ↓
+Race Result (คำนวณ Chip Time, Gun Time, Pace)
+     ↓
+Ranking (คำนวณอันดับ Overall, Gender, Age Group แบบ Dynamic)
+```
+
+#### 21. `race_results` (RACE_RESULT)
 ตารางบันทึกผลการแข่งขันทางการของนักวิ่งทุกคนที่เข้าเส้นชัย
-- **`id`** (UUID, PK): รหัสผลการแข่งขัน
-- **`event_id`** (UUID, FK -> `events.id`): งานวิ่ง
-- **`registration_id`** (UUID, FK -> `registrations.id`): ใบลงทะเบียน
-- **`bib_number`** (TEXT): หมายเลข BIB
-- **`runner_name`** (TEXT): ชื่อนายวิ่ง
-- **`gender`**, **`age_group`**, **`distance`** (TEXT): ข้อมูลรุ่นการแข่งขัน
-- **`chip_time`** (TEXT): เวลาจริงตั้งแต่เหยียบพรมปล่อยตัว (เช่น "00:54:12")
-- **`gun_time`** (TEXT): เวลาตั้งแต่วินาทีที่ยิงปืนปล่อยตัว (เช่น "00:55:04")
-- **`pace`** (TEXT): เพซความเร็วเฉลี่ย (เช่น "05:12")
-- **`overall_rank`**, **`gender_rank`**, **`category_rank`** (INTEGER): ลำดับที่
+```
+RACE_RESULT
+├── id (UUID, PK)
+├── event_id (UUID, FK -> events.id)
+├── registration_id (UUID, FK -> registrations.id)
+├── bib_number (TEXT: หมายเลข BIB)
+├── runner_name (TEXT: ชื่อนายวิ่ง)
+├── gender (TEXT: เพศ male / female)
+├── age_group (TEXT: รุ่นอายุ เช่น 30-39)
+├── distance (TEXT: ระยะทาง เช่น 21 KM)
+├── gun_time (TEXT: เวลาปืนปล่อยตัว เช่น 00:55:04)
+├── chip_time (TEXT: เวลาชิปจริง เช่น 00:54:12)
+├── finish_time (TEXT: เวลาเข้าเส้นชัย เช่น 05:54:12 น.)
+├── pace (TEXT: เพซเฉลี่ย เช่น 05:12 /km)
+├── status (TEXT: สถานะ FINISHER, DNF, DNS, DQ)
+├── overall_rank (INTEGER: อันดับรวม)
+├── gender_rank (INTEGER: อันดับแยกเพศ)
+├── age_group_rank (INTEGER: อันดับแยกรุ่นอายุ)
+└── verifiedAt (TIMESTAMPTZ: วันเวลาที่ตรวจรับรองสถิติ)
+```
 
 #### 21. `race_splits`
 ตารางบันทึกเวลาแยกตามจุดเช็คพอยต์ย่อยในสนาม (Split Times)

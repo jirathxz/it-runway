@@ -186,6 +186,19 @@ export const rfidChips = pgTable("rfid_chips", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// 12.1. rfid_reads (RFID Reader Ingestion Mat Stream)
+export const rfidReads = pgTable("rfid_reads", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  chipId: text("chip_id").notNull(), // RFID chip EPC code e.g. "NP-TIMING-1088"
+  bibId: text("bib_id").notNull(), // Runner BIB e.g. "1088"
+  checkpointId: uuid("checkpoint_id").references(() => eventCheckpoints.id, { onDelete: "cascade" }),
+  eventId: uuid("event_id").notNull().references(() => events.id, { onDelete: "cascade" }),
+  detectedAt: timestamp("detected_at", { withTimezone: true }).defaultNow().notNull(),
+  readerId: text("reader_id").notNull().default("READER-FINISH-MAT-01"), // e.g. "READER-START-01", "READER-KM5-01", "READER-FINISH-01"
+  rawData: text("raw_data"), // e.g. JSON string { "rssi": -62, "antenna": 2, "epc": "E2801170...", "frequency": 922.5 }
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // 13. checkins
 export const checkins = pgTable("checkins", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -247,15 +260,17 @@ export const raceResults = pgTable("race_results", {
   registrationId: uuid("registration_id").notNull().references(() => registrations.id, { onDelete: "cascade" }),
   bibNumber: text("bib_number").notNull(),
   runnerName: text("runner_name").notNull(),
-  gender: text("gender").notNull(),
-  ageGroup: text("age_group").notNull(),
-  distance: text("distance").notNull(),
-  chipTime: text("chip_time").notNull(), // e.g. "00:54:12"
+  gender: text("gender").notNull().default("male"),
+  ageGroup: text("age_group").notNull().default("30-39"),
+  distance: text("distance").notNull().default("21 KM"),
   gunTime: text("gun_time").notNull(), // e.g. "00:55:04"
-  pace: text("pace").notNull(), // e.g. "05:12"
+  chipTime: text("chip_time").notNull(), // e.g. "00:54:12"
+  finishTime: text("finish_time").notNull(), // e.g. "05:54:12 น."
+  pace: text("pace").notNull(), // e.g. "05:12 /km"
+  status: text("status").notNull().default("FINISHER"), // FINISHER, DNF, DNS, DQ
   overallRank: integer("overall_rank").notNull(),
   genderRank: integer("gender_rank").notNull(),
-  categoryRank: integer("category_rank").notNull(),
+  ageGroupRank: integer("age_group_rank").notNull(),
   verifiedAt: timestamp("verified_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

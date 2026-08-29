@@ -34,10 +34,12 @@ import {
   Camera,
   Download,
   Truck,
+  Radio,
 } from "lucide-react";
 import { QrScannerDialog } from "@/components/organizer/qr-scanner-dialog";
 import { ShirtBreakdownDialog } from "@/components/organizer/shirt-breakdown-dialog";
 import { TrackingManagerDialog } from "@/components/organizer/tracking-manager-dialog";
+import { RfidTimingConsoleDialog } from "@/components/organizer/rfid-timing-console-dialog";
 
 function OrganizerCheckInContent() {
   const searchParams = useSearchParams();
@@ -73,6 +75,7 @@ function OrganizerCheckInContent() {
   // Organizer Tool Modals
   const [shirtModalOpen, setShirtModalOpen] = React.useState(false);
   const [trackingModalOpen, setTrackingModalOpen] = React.useState(false);
+  const [rfidModalOpen, setRfidModalOpen] = React.useState(false);
 
   // Export Complete Participants CSV with UTF-8 BOM
   const handleExportRunnersCSV = () => {
@@ -387,7 +390,19 @@ function OrganizerCheckInContent() {
                   <span>จัดการเลขพัสดุ (Tracking)</span>
                 </Button>
 
-                {/* 3. Export CSV */}
+                {/* 3. RFID Timing Console */}
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRfidModalOpen(true)}
+                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"
+                >
+                  <Radio className="size-3.5 text-amber-400 animate-pulse" />
+                  <span>ควบคุมพรม RFID (Timing Mat)</span>
+                </Button>
+
+                {/* 4. Export CSV */}
                 <Button
                   type="button"
                   size="sm"
@@ -835,6 +850,16 @@ function OrganizerCheckInContent() {
           onOpenChange={setTrackingModalOpen}
           participants={participants}
           onTrackingUpdated={() => loadEventData(selectedEventId)}
+        />
+
+        {/* RFID Timing Console Modal */}
+        <RfidTimingConsoleDialog
+          open={rfidModalOpen}
+          onOpenChange={setRfidModalOpen}
+          eventId={selectedEventId}
+          eventName={events.find((e) => e.id === selectedEventId)?.title || "งานวิ่ง"}
+          participants={participants}
+          onTimingUpdated={() => loadEventData(selectedEventId)}
         />
       </main>
     </div>
