@@ -352,7 +352,7 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
 
         {/* 12-Month Navigation Ribbon */}
         <div className="mt-6 pt-5 border-t border-[var(--line)]">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scroll-x touch-pan-x w-full">
             {MONTH_SHORT_TH.map((mName, idx) => {
               const count = eventCountByMonth[idx];
               const isActive = currentMonth === idx;
@@ -368,7 +368,7 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
                     }
                   }}
                   className={cn(
-                    "flex flex-col items-center justify-center min-w-[62px] sm:min-w-[72px] flex-1 py-2 px-2 rounded-[var(--radius)] border transition-all cursor-pointer select-none",
+                    "flex flex-col items-center justify-center min-w-[64px] sm:min-w-[72px] min-h-[44px] flex-1 py-2 px-2 rounded-[var(--radius)] border transition-all cursor-pointer select-none",
                     isActive
                       ? "bg-[var(--accent)] border-[var(--accent)] text-[var(--accent-ink)] shadow-[var(--shadow-near)] scale-[1.03]"
                       : count > 0
@@ -396,14 +396,14 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[var(--surface)] border border-[var(--line)] rounded-[var(--radius)] p-3 shadow-sm">
-        {/* Category Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        {/* Category Pills — horizontal scroll on mobile with touch-friendly height */}
+        <div className="scroll-x sm:overflow-visible flex items-center gap-1.5 pb-1 sm:pb-0">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
               className={cn(
-                "px-3 py-1.5 rounded-[var(--radius)] text-xs font-bold transition-colors whitespace-nowrap cursor-pointer",
+                "px-3 py-2 min-h-[44px] sm:min-h-0 sm:py-1.5 rounded-[var(--radius)] text-xs font-bold transition-colors whitespace-nowrap cursor-pointer shrink-0",
                 selectedCategory === cat.id
                   ? "bg-[var(--ink)] text-[var(--base)]"
                   : "bg-[var(--surface-2)] text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface)] border border-[var(--line)]"
@@ -414,7 +414,7 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
           ))}
         </div>
 
-        {/* Search Input */}
+        {/* Search Input — full width on mobile */}
         <div className="relative w-full sm:w-64 shrink-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-[var(--ink-3)] pointer-events-none" />
           <Input
@@ -422,7 +422,7 @@ export function CalendarView({ initialEvents }: CalendarViewProps) {
             placeholder="ค้นหาชื่องาน, สถานที่..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8 pr-3 h-8.5 text-xs bg-[var(--surface-2)] border-[var(--line)] focus-visible:ring-[var(--accent)]"
+            className="pl-8 pr-3 h-11 sm:h-8.5 text-xs bg-[var(--surface-2)] border-[var(--line)] focus-visible:ring-[var(--accent)]"
           />
         </div>
       </div>

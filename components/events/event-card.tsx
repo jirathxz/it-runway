@@ -28,6 +28,8 @@ export interface EventItem {
   distance: string;
   price: number;
   slots?: string | number;
+  remainingSlots?: number;
+  isSoldOut?: boolean;
   status: string; // "open" | "near_full" | "closed" | "เปิดรับสมัคร" | "ใกล้เต็ม"
   category?: string; // "road" | "trail" | "cycling" | "triathlon"
   image?: string;
@@ -117,11 +119,19 @@ export function EventCard({
                   RFID CHIP
                 </span>
               </div>
-              {event.slots && (
+              {event.isSoldOut || event.remainingSlots === 0 ? (
+                <span className="text-red-500 font-bold bg-red-500/10 px-2 py-0.5 rounded text-xs">
+                  เต็มแล้ว (Sold Out)
+                </span>
+              ) : event.remainingSlots !== undefined ? (
+                <span className="text-[var(--accent)] font-bold">
+                  เหลือ {event.remainingSlots} ที่
+                </span>
+              ) : event.slots ? (
                 <span className="text-[var(--accent)] font-bold">
                   เหลือ {event.slots} ที่
                 </span>
-              )}
+              ) : null}
             </div>
 
             {/* Title */}
@@ -166,9 +176,13 @@ export function EventCard({
               <Link href={`/events/${event.id}`}>
                 <Button
                   size="sm"
-                  className="h-9 font-bold text-xs"
+                  className={cn(
+                    "h-9 font-bold text-xs",
+                    (event.isSoldOut || event.remainingSlots === 0) &&
+                      "bg-zinc-700/80 text-zinc-300 hover:bg-zinc-750 border border-zinc-600/50"
+                  )}
                 >
-                  <span>สมัครเลย</span>
+                  <span>{event.isSoldOut || event.remainingSlots === 0 ? "เต็มแล้ว" : "สมัครเลย"}</span>
                   <ChevronRight className="size-3.5 stroke-[2.5]" />
                 </Button>
               </Link>
@@ -183,7 +197,7 @@ export function EventCard({
   return (
     <Card className="group relative flex flex-col overflow-hidden border-[var(--line)] bg-[var(--surface)] transition-all duration-200 hover:border-[var(--ink-3)] hover:shadow-[var(--shadow-far)] hover:-translate-y-1">
       {/* Banner / Poster Image */}
-      <div className="relative h-44 w-full overflow-hidden bg-[var(--surface-2)]">
+      <div className="relative h-40 sm:h-44 md:h-48 w-full overflow-hidden bg-[var(--surface-2)]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={defaultImage}
@@ -237,11 +251,19 @@ export function EventCard({
             <Calendar className="size-3.5 text-[var(--accent)]" />
             {event.date}
           </span>
-          {event.slots && (
+          {event.isSoldOut || event.remainingSlots === 0 ? (
+            <span className="text-red-500 font-bold bg-red-500/10 px-1.5 py-0.5 rounded text-[10px]">
+              เต็มแล้ว
+            </span>
+          ) : event.remainingSlots !== undefined ? (
+            <span className="text-[var(--accent)] font-bold text-[11px]">
+              เหลือ {event.remainingSlots} ที่
+            </span>
+          ) : event.slots ? (
             <span className="text-[var(--accent)] font-bold text-[11px]">
               เหลือ {event.slots} ที่
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Title */}
@@ -279,9 +301,13 @@ export function EventCard({
           <Link href={`/events/${event.id}`}>
             <Button
               size="sm"
-              className="h-9 px-3.5 font-bold text-xs"
+              className={cn(
+                "h-9 px-3.5 font-bold text-xs",
+                (event.isSoldOut || event.remainingSlots === 0) &&
+                  "bg-zinc-700/80 text-zinc-300 hover:bg-zinc-750 border border-zinc-600/50"
+              )}
             >
-              <span>สมัคร</span>
+              <span>{event.isSoldOut || event.remainingSlots === 0 ? "เต็มแล้ว" : "สมัคร"}</span>
               <ChevronRight className="size-3.5 stroke-[2.5]" />
             </Button>
           </Link>

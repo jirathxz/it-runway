@@ -501,8 +501,8 @@ function OrganizerCheckInContent() {
 
           {/* Event Picker Dropdown */}
           {events.length > 0 ? (
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--ink-2)]">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 text-xs font-mono text-[var(--ink-2)] shrink-0">
                 {(session?.user as any)?.role === "admin" ? (
                   <span className="flex items-center gap-1 text-amber-400 font-bold">
                     <Crown className="size-3.5" />
@@ -515,11 +515,11 @@ function OrganizerCheckInContent() {
                   </span>
                 )}
               </div>
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <select
                   value={selectedEventId}
                   onChange={(e) => setSelectedEventId(e.target.value)}
-                  className="h-10 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-2)] px-3 pr-8 text-xs font-bold text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none cursor-pointer appearance-none max-w-[280px]"
+                  className="h-10 w-full sm:w-auto min-w-0 max-w-full sm:max-w-md rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface-2)] px-3 pr-8 text-xs font-bold text-[var(--ink)] focus:border-[var(--accent)] focus:outline-none cursor-pointer appearance-none truncate"
                 >
                   {events.map((ev) => (
                     <option key={ev.id} value={ev.id}>
@@ -577,7 +577,7 @@ function OrganizerCheckInContent() {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {/* Offline Check-in & Network Resilience Banner */}
             <div className={`p-4 rounded-2xl border transition-all flex flex-col md:flex-row md:items-center justify-between gap-4 ${
               !isOnline || offlineMode
@@ -596,14 +596,14 @@ function OrganizerCheckInContent() {
                     <Wifi className="size-5" />
                   )}
                 </div>
-                <div>
-                  <div className="flex items-center gap-2">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-bold text-[var(--ink)]">
                       {!isOnline
-                        ? "สถานะ: ออฟไลน์ (ไม่มีอินเทอร์เน็ต)"
+                        ? "สถานะ: ออฟไลน์"
                         : offlineMode
-                        ? "สถานะ: โหมดออฟไลน์จำลอง (IndexedDB Active)"
-                        : "สถานะ: ออนไลน์พร้อมใช้งาน (เชื่อมต่อ Database)"}
+                        ? "สถานะ: โหมดออฟไลน์จำลอง"
+                        : "สถานะ: ออนไลน์พร้อมใช้งาน"}
                     </span>
                     <Badge
                       variant="outline"
@@ -617,14 +617,14 @@ function OrganizerCheckInContent() {
                     </Badge>
                   </div>
                   <p className="text-xs text-[var(--ink-2)] mt-0.5">
-                    แคชในเครื่อง: <strong className="text-[var(--ink)]">{offlineStats.totalCached}</strong> คน | 
-                    เช็คอินออฟไลน์: <strong className="text-amber-400">{offlineStats.checkedInOffline}</strong> คน | 
-                    คอยซิงค์: <strong className="text-rose-400">{offlineStats.pendingSyncCount}</strong> รายการ
+                    แคช: <strong className="text-[var(--ink)]">{offlineStats.totalCached}</strong> | 
+                    ออฟไลน์: <strong className="text-amber-400">{offlineStats.checkedInOffline}</strong> | 
+                    คอยซิงค์: <strong className="text-rose-400">{offlineStats.pendingSyncCount}</strong>
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-1 sm:flex sm:flex-wrap items-stretch sm:items-center gap-2 w-full md:w-auto">
                 {/* Download Offline Roster Button */}
                 <Button
                   type="button"
@@ -632,10 +632,10 @@ function OrganizerCheckInContent() {
                   size="sm"
                   onClick={handleDownloadOfflineRoster}
                   disabled={downloadingOffline || !selectedEventId}
-                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer bg-[var(--surface-2)]"
+                  className="h-9 sm:h-8 text-xs font-semibold gap-1.5 cursor-pointer bg-[var(--surface-2)] justify-center"
                 >
                   <HardDriveDownload className={`size-3.5 ${downloadingOffline ? "animate-bounce" : "text-blue-400"}`} />
-                  <span>{downloadingOffline ? "กำลังโหลดข้อมูล..." : "ดาวน์โหลด Roster ลงเครื่อง (Offline Cache)"}</span>
+                  <span>{downloadingOffline ? "กำลังโหลด..." : "ดาวน์โหลด Roster ลงเครื่อง (Offline Cache)"}</span>
                 </Button>
 
                 {/* Sync Offline Queue Button */}
@@ -645,7 +645,7 @@ function OrganizerCheckInContent() {
                   size="sm"
                   onClick={handleSyncOfflineQueue}
                   disabled={syncingOffline || offlineStats.pendingSyncCount === 0 || !isOnline}
-                  className={`h-8 text-xs font-bold gap-1.5 cursor-pointer ${
+                  className={`h-9 sm:h-8 text-xs font-bold gap-1.5 cursor-pointer justify-center ${
                     offlineStats.pendingSyncCount > 0
                       ? "border-amber-500 text-amber-400 bg-amber-500/20 hover:bg-amber-500/30 animate-pulse"
                       : "opacity-70"
@@ -665,7 +665,7 @@ function OrganizerCheckInContent() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setOfflineMode(!offlineMode)}
-                  className="h-8 text-xs font-mono text-[var(--ink-3)] hover:text-[var(--ink)] cursor-pointer"
+                  className="h-9 sm:h-8 text-xs font-mono text-[var(--ink-3)] hover:text-[var(--ink)] cursor-pointer justify-center"
                 >
                   {offlineMode ? "สลับเป็น Online" : "ทดสอบ Offline"}
                 </Button>
@@ -673,24 +673,24 @@ function OrganizerCheckInContent() {
             </div>
 
             {/* Quick Organizer Tools Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-sm">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-3 p-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-sm">
+              <div className="flex items-center justify-between gap-2">
                 <Badge variant="outline" className="font-mono text-xs text-[var(--accent)] border-[var(--accent)]/30 bg-[var(--accent)]/10 font-bold">
                   ORGANIZER MANAGEMENT TOOLS
                 </Badge>
-                <span className="text-xs font-mono text-[var(--ink-2)] hidden sm:inline">
+                <span className="text-xs font-mono text-[var(--ink-2)]">
                   {participants.length} นักวิ่งในระบบ
                 </span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2 w-full">
                 {/* 1. Shirt Size Breakdown */}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => setShirtModalOpen(true)}
-                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-[var(--surface-2)]"
+                  className="h-9 sm:h-8 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-[var(--surface-2)] justify-center"
                 >
                   <Shirt className="size-3.5 text-[var(--accent)]" />
                   <span>สรุปยอดสั่งเสื้อ (Sizes)</span>
@@ -702,7 +702,7 @@ function OrganizerCheckInContent() {
                   variant="outline"
                   size="sm"
                   onClick={() => setTrackingModalOpen(true)}
-                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-[var(--surface-2)]"
+                  className="h-9 sm:h-8 text-xs font-semibold gap-1.5 cursor-pointer hover:bg-[var(--surface-2)] justify-center"
                 >
                   <Truck className="size-3.5 text-blue-400" />
                   <span>จัดการเลขพัสดุ (Tracking)</span>
@@ -714,7 +714,7 @@ function OrganizerCheckInContent() {
                   variant="outline"
                   size="sm"
                   onClick={() => setRfidModalOpen(true)}
-                  className="h-8 text-xs font-semibold gap-1.5 cursor-pointer border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20"
+                  className="h-9 sm:h-8 text-xs font-semibold gap-1.5 cursor-pointer border-amber-500/30 text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 justify-center"
                 >
                   <Radio className="size-3.5 text-amber-400 animate-pulse" />
                   <span>ควบคุมพรม RFID (Timing Mat)</span>
@@ -726,7 +726,7 @@ function OrganizerCheckInContent() {
                   size="sm"
                   onClick={handleExportRunnersCSV}
                   disabled={participants.length === 0}
-                  className="h-8 text-xs font-bold gap-1.5 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 shadow-sm"
+                  className="h-9 sm:h-8 text-xs font-bold gap-1.5 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 shadow-sm justify-center sm:col-span-2 lg:col-span-1"
                 >
                   <Download className="size-3.5" />
                   <span>Export รายชื่อ (Excel/CSV)</span>

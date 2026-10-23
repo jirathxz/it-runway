@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { registrations, events, user } from "@/lib/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, ne, count } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NotificationService } from "@/lib/notification-service";
 
@@ -79,24 +79,51 @@ export async function POST(req: NextRequest) {
 
     const targetEvent = eventRows[0];
 
-    // Check if already registered
-    const existing = await db
+    // Check if already registered with an active (non-cancelled) registration
+    const existingActive = await db
       .select()
       .from(registrations)
       .where(
         and(
           eq(registrations.userId, session.user.id),
-          eq(registrations.eventId, eventId)
+          eq(registrations.eventId, eventId),
+          ne(registrations.status, "cancelled")
         )
       )
       .limit(1);
 
-    if (existing.length > 0) {
+    if (existingActive.length > 0) {
       return NextResponse.json(
         {
           error: "คุณได้ลงทะเบียนเข้าร่วมงานวิ่งนี้ไปแล้ว",
           alreadyRegistered: true,
-          bibNumber: existing[0].bibNumber,
+          bibNumber: existingActive[0].bibNumber,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Enforce participant limit / quota per Event
+    const [activeCountRes] = await db
+      .select({ count: count() })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.eventId, eventId),
+          ne(registrations.status, "cancelled")
+        )
+      );
+
+    const activeCount = Number(activeCountRes?.count || 0);
+    const eventCapacity = targetEvent.slots || 500;
+
+    if (activeCount >= eventCapacity) {
+      return NextResponse.json(
+        {
+          error: `ขออภัย งานวิ่ง "${targetEvent.title}" เปิดรับสมัครเต็มจำนวนแล้ว (${eventCapacity}/${eventCapacity} คน)`,
+          soldOut: true,
+          slots: eventCapacity,
+          registeredCount: activeCount,
         },
         { status: 400 }
       );

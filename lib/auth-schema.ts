@@ -14,7 +14,7 @@ export const user = pgTable("user", {
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires"),
   // Phone number / contact
-  phoneNumber: text("phone_number").unique(),
+  phoneNumber: text("phone_number"),
   phoneNumberVerified: boolean("phone_number_verified").default(false),
   // Runner Profile Fields
   gender: text("gender"),

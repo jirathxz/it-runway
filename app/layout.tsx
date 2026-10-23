@@ -1,62 +1,5 @@
 import type { Metadata } from "next";
-import { Chakra_Petch, Barlow_Condensed, IBM_Plex_Sans_Thai_Looped, JetBrains_Mono, Prompt, Kanit, Sarabun, Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
-
-const prompt = Prompt({
-  subsets: ["latin", "thai"],
-  weight: ["600", "700", "800"],
-  variable: "--font-prompt",
-  display: "swap",
-});
-
-const kanit = Kanit({
-  subsets: ["latin", "thai"],
-  weight: ["600", "700", "800"],
-  variable: "--font-kanit",
-  display: "swap",
-});
-
-const sarabun = Sarabun({
-  subsets: ["latin", "thai"],
-  weight: ["600", "700", "800"],
-  variable: "--font-sarabun",
-  display: "swap",
-});
-
-const notoThai = Noto_Sans_Thai({
-  subsets: ["latin", "thai"],
-  weight: ["600", "700", "800"],
-  variable: "--font-noto-thai",
-  display: "swap",
-});
-
-const chakra = Chakra_Petch({
-  subsets: ["latin", "thai"],
-  weight: ["600", "700"],
-  variable: "--font-display",
-  display: "swap",
-});
-
-const barlow = Barlow_Condensed({
-  subsets: ["latin"],
-  weight: ["700", "800"],
-  variable: "--font-bib",
-  display: "swap",
-});
-
-const ibmSansThai = IBM_Plex_Sans_Thai_Looped({
-  subsets: ["latin", "thai"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-text",
-  display: "swap",
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["500", "700"],
-  variable: "--font-mono",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "IT Runway — ศูนย์รวมงานวิ่งและกีฬานครปฐม",
@@ -67,10 +10,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="th"
-      className={`${prompt.variable} ${kanit.variable} ${sarabun.variable} ${notoThai.variable} ${chakra.variable} ${barlow.variable} ${ibmSansThai.variable} ${jetbrains.variable} h-full antialiased`}
-    >
+    <html lang="th" className="h-full antialiased">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Chakra+Petch:wght@600;700&family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&family=Kanit:wght@600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
       <body className="min-h-full flex flex-col bg-[var(--base)] text-[var(--ink)] selection:bg-[var(--accent)] selection:text-[var(--accent-ink)]">
         {/* Skip-to-main: first focusable element — WCAG 2.4.1 */}
         <a

@@ -3,8 +3,8 @@ import { Navbar } from "@/components/navbar";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { EventItem } from "@/components/events/event-card";
 import { db } from "@/lib/db";
-import { events } from "@/lib/schema";
-import { asc } from "drizzle-orm";
+import { events, registrations } from "@/lib/schema";
+import { asc, count, ne } from "drizzle-orm";
 import { Footprints } from "lucide-react";
 
 export const revalidate = 60; // Revalidate every 60 seconds
@@ -26,6 +26,17 @@ function getEventCategory(title: string, distance: string): string {
 async function getEvents(): Promise<EventItem[]> {
   try {
     const rows = await db.select().from(events).orderBy(asc(events.date));
+    const regCounts = await db
+      .select({
+        eventId: registrations.eventId,
+        count: count(),
+      })
+      .from(registrations)
+      .where(ne(registrations.status, "cancelled"))
+      .groupBy(registrations.eventId);
+
+    const regMap = new Map(regCounts.map((r) => [r.eventId, Number(r.count)]));
+
     return rows.map((ev) => {
       const dt = new Date(ev.date);
       const thaiDate = dt.toLocaleDateString("th-TH", {
@@ -39,6 +50,10 @@ async function getEvents(): Promise<EventItem[]> {
       const timeStr = `${hours}:${minutes} น.`;
 
       const category = getEventCategory(ev.title, ev.distance);
+      const totalSlots = Number(ev.slots) || 500;
+      const registered = regMap.get(ev.id) || 0;
+      const remainingSlots = Math.max(0, totalSlots - registered);
+      const isSoldOut = remainingSlots === 0 || ev.status === "closed";
 
       return {
         id: ev.id,
@@ -48,8 +63,10 @@ async function getEvents(): Promise<EventItem[]> {
         time: timeStr !== "00:00 น." ? timeStr : "05:30 น.",
         distance: ev.distance,
         price: ev.price,
-        slots: "300+",
-        status: ev.status || "open",
+        slots: totalSlots,
+        remainingSlots,
+        isSoldOut,
+        status: isSoldOut ? "closed" : remainingSlots <= 50 ? "near_full" : ev.status || "open",
         category,
         image: ev.image || "https://images.pexels.com/photos/20487480/pexels-photo-20487480.png?auto=compress&cs=tinysrgb&h=650&w=940",
       };

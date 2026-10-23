@@ -78,17 +78,35 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if new recipient exists by email or phone
+    // Check if new recipient exists by email or create new profile
     let targetUserId = reg.userId;
     if (newRunnerEmail && newRunnerEmail.trim() !== "") {
+      const cleanEmail = newRunnerEmail.trim().toLowerCase();
       const existingUser = await db
         .select()
         .from(user)
-        .where(eq(user.email, newRunnerEmail.trim().toLowerCase()))
+        .where(eq(user.email, cleanEmail))
         .limit(1);
 
       if (existingUser.length > 0) {
         targetUserId = existingUser[0].id;
+      } else {
+        const newUserId = `usr_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+        const [createdUser] = await db
+          .insert(user)
+          .values({
+            id: newUserId,
+            name: newRunnerName,
+            email: cleanEmail,
+            emailVerified: false,
+            phoneNumber: newRunnerPhone,
+            gender: newGender || "male",
+            emergencyName: newEmergencyName,
+            emergencyPhone: newEmergencyPhone,
+            medicalConditions: newMedicalConditions || "ไม่มีโรคประจำตัว",
+          })
+          .returning();
+        targetUserId = createdUser.id;
       }
     }
 

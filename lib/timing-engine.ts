@@ -285,22 +285,29 @@ export async function recalculateEventRankings(eventId: string, distance: string
     const currentAgeRank = ageGroupCounters[ageKey] || 1;
     ageGroupCounters[ageKey] = currentAgeRank + 1;
 
-    await db
-      .update(raceResults)
-      .set({
-        overallRank: overallRank,
-        genderRank: currentGenderRank,
-        ageGroupRank: currentAgeRank,
-      })
-      .where(eq(raceResults.id, r.id));
+    const rankChanged =
+      r.overallRank !== overallRank ||
+      r.genderRank !== currentGenderRank ||
+      r.ageGroupRank !== currentAgeRank;
 
-    // Also sync overall rank to registration
-    await db
-      .update(registrations)
-      .set({
-        rank: `#${overallRank}`,
-      })
-      .where(eq(registrations.id, r.registrationId));
+    if (rankChanged) {
+      await db
+        .update(raceResults)
+        .set({
+          overallRank: overallRank,
+          genderRank: currentGenderRank,
+          ageGroupRank: currentAgeRank,
+        })
+        .where(eq(raceResults.id, r.id));
+
+      // Also sync overall rank to registration
+      await db
+        .update(registrations)
+        .set({
+          rank: `#${overallRank}`,
+        })
+        .where(eq(registrations.id, r.registrationId));
+    }
 
     overallRank++;
   }

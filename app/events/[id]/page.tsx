@@ -5,8 +5,8 @@ import { Navbar } from "@/components/navbar";
 import { EventDetailView } from "@/components/events/event-detail-view";
 import { generateEventDetailData } from "@/lib/event-details-data";
 import { db } from "@/lib/db";
-import { events } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { events, registrations } from "@/lib/schema";
+import { eq, and, ne, count } from "drizzle-orm";
 import { Footprints } from "lucide-react";
 
 export const revalidate = 60; // 1 minute revalidation
@@ -26,7 +26,28 @@ async function getEventById(id: string) {
     if (rows.length === 0) {
       return null;
     }
-    return rows[0];
+
+    const [regCount] = await db
+      .select({ count: count() })
+      .from(registrations)
+      .where(
+        and(
+          eq(registrations.eventId, id),
+          ne(registrations.status, "cancelled")
+        )
+      );
+
+    const registered = Number(regCount?.count || 0);
+    const totalSlots = rows[0].slots || 500;
+    const remainingSlots = Math.max(0, totalSlots - registered);
+
+    return {
+      ...rows[0],
+      slots: totalSlots,
+      registeredCount: registered,
+      remainingSlots,
+      isSoldOut: remainingSlots === 0,
+    };
   } catch (error) {
     console.error("Error fetching event by id:", error);
     return null;

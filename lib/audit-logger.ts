@@ -4,6 +4,8 @@ import { auditLogs } from "./schema";
 export type AuditAction =
   | "ADMIN_APPROVE_EVENT"
   | "ADMIN_REJECT_EVENT"
+  | "ADMIN_EDIT_EVENT"
+  | "ADMIN_DELETE_EVENT"
   | "ADMIN_CANCEL_REGISTRATION"
   | "ADMIN_CHANGE_USER_ROLE"
   | "ORGANIZER_CHECKIN"

@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events, registrations, user } from "@/lib/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { recordAuditLog } from "@/lib/audit-logger";
 
@@ -44,21 +44,22 @@ export async function POST(req: NextRequest) {
       const [reg] = await db
         .select()
         .from(registrations)
-        .where(eq(registrations.id, registrationId));
+        .where(eq(registrations.id, registrationId))
+        .limit(1);
       targetReg = reg;
     } else if (query) {
       const cleanQuery = query.trim().toUpperCase();
-      const rows = await db.select().from(registrations);
-      targetReg = rows.find((r) => {
-        const matchesQuery =
-          r.bibNumber.toUpperCase() === cleanQuery ||
-          r.chipCode.toUpperCase() === cleanQuery ||
-          r.id.toUpperCase() === cleanQuery;
-        if (eventId) {
-          return matchesQuery && r.eventId === eventId;
-        }
-        return matchesQuery;
-      });
+      const matchCriteria = or(
+        eq(registrations.bibNumber, cleanQuery),
+        eq(registrations.chipCode, cleanQuery)
+      );
+
+      const [reg] = await db
+        .select()
+        .from(registrations)
+        .where(eventId ? and(eq(registrations.eventId, eventId), matchCriteria) : matchCriteria)
+        .limit(1);
+      targetReg = reg;
     }
 
     if (!targetReg) {

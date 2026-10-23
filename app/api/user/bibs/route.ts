@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     const rows = await db
       .select({
         id: registrations.id,
+        eventId: registrations.eventId,
         bibNumber: registrations.bibNumber,
         corral: registrations.corral,
         distance: registrations.distance,
@@ -55,6 +56,7 @@ export async function GET(req: NextRequest) {
 
       return {
         id: r.id,
+        eventId: r.eventId,
         bibNumber: r.bibNumber,
         corral: r.corral,
         eventTitle: r.eventTitle,

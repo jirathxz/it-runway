@@ -257,8 +257,8 @@ export function EventFilters({
         </div>
 
         {/* Category Pills Row */}
-        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 scrollbar-none">
-          <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scroll-x touch-pan-x w-full">
+          <div className="flex items-center gap-1.5 shrink-0 py-0.5">
             {CATEGORIES.map((cat) => {
               const isSelected = filters.category === cat.id;
               return (
@@ -269,10 +269,10 @@ export function EventFilters({
                     onFilterChange({ ...filters, category: cat.id })
                   }
                   className={cn(
-                    "flex h-8 items-center gap-1.5 rounded-[var(--radius)] border px-3 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer",
+                    "flex h-9 sm:h-8 items-center gap-1.5 rounded-[var(--radius)] border px-3.5 sm:px-3 text-xs font-semibold transition-all whitespace-nowrap cursor-pointer",
                     isSelected
                       ? "border-[var(--accent)] bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow-sm"
-                      : "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-2)] hover:border-[var(--ink-3)] hover:text-[var(--ink)]"
+                      : "border-[var(--line)] bg-[var(--surface-2)] text-[var(--ink-2)] hover:border-[var(--ink-3)] hover:text-[var(--ink)] active:scale-95"
                   )}
                 >
                   <span>{cat.label}</span>
@@ -286,7 +286,7 @@ export function EventFilters({
             <button
               type="button"
               onClick={onReset}
-              className="hidden sm:inline-flex items-center gap-1 text-xs text-[var(--ink-3)] hover:text-[var(--accent)] transition-colors whitespace-nowrap cursor-pointer ml-auto"
+              className="inline-flex items-center gap-1 text-xs text-[var(--ink-3)] hover:text-[var(--accent)] transition-colors whitespace-nowrap cursor-pointer shrink-0 ml-auto pl-2"
             >
               <RotateCcw className="size-3" />
               <span>ล้างตัวกรอง ({activeCount})</span>

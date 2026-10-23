@@ -52,6 +52,10 @@ interface EventDetailViewProps {
     date: string | Date;
     distance: string;
     price: number;
+    slots?: number;
+    remainingSlots?: number;
+    registeredCount?: number;
+    isSoldOut?: boolean;
     image?: string | null;
     status?: string | null;
   };
@@ -813,10 +817,49 @@ export function EventDetailView({ event, detailData }: EventDetailViewProps) {
                   <span className="text-xs font-normal font-sans text-[var(--ink-3)] ml-1">บาท</span>
                 </span>
               </div>
-              <Badge variant="surface" className="text-[10px] font-bold text-[var(--positive)] bg-[var(--positive)]/10 border-[var(--positive)]/30">
-                เปิดรับสมัคร
-              </Badge>
+              {event.isSoldOut || (event.remainingSlots !== undefined && event.remainingSlots <= 0) ? (
+                <Badge variant="surface" className="text-[10px] font-bold text-red-500 bg-red-500/10 border-red-500/30">
+                  เต็มแล้ว (Sold Out)
+                </Badge>
+              ) : (
+                <Badge variant="surface" className="text-[10px] font-bold text-[var(--positive)] bg-[var(--positive)]/10 border-[var(--positive)]/30">
+                  เปิดรับสมัคร
+                </Badge>
+              )}
             </div>
+
+            {/* Quota & Capacity Progress */}
+            {event.slots && (
+              <div className="flex flex-col gap-1.5 p-3 rounded-xl border border-[var(--line)] bg-[var(--surface-2)]">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-[var(--ink-3)]">โควตารับสมัคร:</span>
+                  <span className="font-bold text-[var(--ink)]">
+                    {event.remainingSlots !== undefined
+                      ? `เหลือ ${event.remainingSlots} จาก ${event.slots} ที่`
+                      : `จำกัด ${event.slots} ที่`}
+                  </span>
+                </div>
+                <div className="w-full bg-[var(--surface)] h-2 rounded-full overflow-hidden border border-[var(--line)]">
+                  <div
+                    className={cn(
+                      "h-full transition-all duration-500",
+                      event.isSoldOut || (event.remainingSlots !== undefined && event.remainingSlots <= 0)
+                        ? "bg-red-500"
+                        : "bg-[var(--accent)]"
+                    )}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.max(
+                          5,
+                          (((event.slots - (event.remainingSlots ?? 0)) / event.slots) * 100)
+                        )
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Error Message if any */}
             {registerError && (
@@ -954,11 +997,19 @@ export function EventDetailView({ event, detailData }: EventDetailViewProps) {
             <Button
               size="lg"
               onClick={handleRegister}
-              disabled={isRegistering}
-              className="w-full h-12 text-sm font-bold shadow-[var(--shadow-far)] cursor-pointer"
+              disabled={isRegistering || Boolean(event.isSoldOut || (event.remainingSlots !== undefined && event.remainingSlots <= 0))}
+              className={cn(
+                "w-full h-12 text-sm font-bold shadow-[var(--shadow-far)] cursor-pointer",
+                (event.isSoldOut || (event.remainingSlots !== undefined && event.remainingSlots <= 0)) &&
+                  "bg-zinc-700/80 text-zinc-300 hover:bg-zinc-700 cursor-not-allowed border border-zinc-600/50"
+              )}
             >
               <CheckCircle2 className="size-4 mr-2" />
-              <span>ดำเนินการชำระเงินและสมัครทันที</span>
+              <span>
+                {event.isSoldOut || (event.remainingSlots !== undefined && event.remainingSlots <= 0)
+                  ? "ขออภัย รับสมัครเต็มจำนวนแล้ว (Sold Out)"
+                  : "ดำเนินการชำระเงินและสมัครทันที"}
+              </span>
               <ChevronRight className="size-4 stroke-[3]" />
             </Button>
 

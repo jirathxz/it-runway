@@ -111,30 +111,36 @@ export function SearchCommandDialog({
         const res = await fetch("/api/events");
         if (res.ok) {
           const data = await res.json();
-          const items: SearchResultItem[] = (data.events || []).map((ev: any) => {
-            const dt = new Date(ev.date);
-            const thaiDate = dt.toLocaleDateString("th-TH", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-              timeZone: "Asia/Bangkok",
-            });
-            const hours = dt.getUTCHours().toString().padStart(2, "0");
-            const minutes = dt.getUTCMinutes().toString().padStart(2, "0");
-            const timeStr = `${hours}:${minutes} น.`;
+          const rawEvents = data.events || [];
+          const items: SearchResultItem[] = rawEvents
+            .filter((ev: any) => {
+              const t = (ev.title || "").trim().toLowerCase();
+              return t && !["ควย", "test", "asdf", "xxx"].includes(t);
+            })
+            .map((ev: any) => {
+              const dt = new Date(ev.date);
+              const thaiDate = dt.toLocaleDateString("th-TH", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                timeZone: "Asia/Bangkok",
+              });
+              const hours = dt.getUTCHours().toString().padStart(2, "0");
+              const minutes = dt.getUTCMinutes().toString().padStart(2, "0");
+              const timeStr = `${hours}:${minutes} น.`;
 
-            return {
-              id: ev.id,
-              title: ev.title,
-              location: ev.location,
-              date: thaiDate,
-              time: timeStr !== "00:00 น." ? timeStr : "05:30 น.",
-              distance: ev.distance,
-              price: ev.price,
-              image: ev.image,
-              status: ev.status || "open",
-            };
-          });
+              return {
+                id: ev.id,
+                title: ev.title,
+                location: ev.location,
+                date: thaiDate,
+                time: timeStr !== "00:00 น." ? timeStr : "05:30 น.",
+                distance: ev.distance,
+                price: ev.price,
+                image: ev.image,
+                status: ev.status || "open",
+              };
+            });
           setEvents(items);
         }
       } catch (err) {
@@ -306,7 +312,8 @@ export function SearchCommandDialog({
               }}
               onKeyDown={handleKeyDown}
               placeholder="ค้นหาชื่องานวิ่ง, ระยะทาง (10K, 21K), หรือสถานที่..."
-              className="w-full bg-transparent text-sm sm:text-base font-[var(--font-text)] text-[var(--ink)] placeholder:text-[var(--ink-3)] focus:outline-none"
+              style={{ outline: "none", boxShadow: "none", border: "none" }}
+              className="w-full bg-transparent text-sm sm:text-base font-[var(--font-text)] text-[var(--ink)] placeholder:text-[var(--ink-3)] !outline-none !ring-0 !border-none !shadow-none"
             />
           </div>
 
@@ -331,7 +338,7 @@ export function SearchCommandDialog({
         </div>
 
         {/* Quick Filter Category Tags & QR Scanner Button */}
-        <div className="px-4 py-2.5 border-b border-[var(--line)] bg-[var(--surface)] flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+        <div className="px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--surface)] flex items-center gap-1.5 overflow-x-auto scroll-x touch-pan-x w-full">
           <span className="text-[11px] font-mono text-[var(--ink-3)] shrink-0 mr-1 flex items-center gap-1">
             <Filter className="size-3 text-[var(--accent)]" />
             ตัวกรอง:
@@ -345,9 +352,9 @@ export function SearchCommandDialog({
                 setSelectedIndex(0);
               }}
               className={cn(
-                "px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border",
+                "px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer border shrink-0",
                 activeCategory === tag.value
-                  ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold border-[var(--accent)] shadow-sm"
+                  ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold border-[var(--accent)] shadow-xs"
                   : "bg-[var(--surface-2)] text-[var(--ink-2)] border-[var(--line)] hover:border-[var(--ink-3)]"
               )}
             >
@@ -571,8 +578,8 @@ export function SearchCommandDialog({
         </div>
 
         {/* Footer info & keyboard shortcuts */}
-        <div className="p-3.5 border-t border-[var(--line)] bg-[var(--surface-2)]/60 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-[var(--ink-3)]">
-          <div className="flex items-center gap-3">
+        <div className="p-3 sm:p-3.5 border-t border-[var(--line)] bg-[var(--surface-2)]/60 flex items-center justify-between gap-2 text-[11px] font-mono text-[var(--ink-3)] shrink-0">
+          <div className="hidden sm:flex items-center gap-3">
             <span className="flex items-center gap-1">
               <kbd className="px-1 py-0.5 rounded border border-[var(--line)] bg-[var(--base)] text-[9px]">
                 ↑
@@ -590,7 +597,11 @@ export function SearchCommandDialog({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 text-[var(--accent)] font-bold">
+          <div className="sm:hidden flex items-center gap-1 text-[var(--ink-2)] text-[11px]">
+            <span>แตะรายการเพื่อเปิดดูรายละเอียด</span>
+          </div>
+
+          <div className="flex items-center gap-1 text-[var(--accent)] font-bold ml-auto">
             <Footprints className="size-3" />
             <span>IT RUNWAY SYSTEM</span>
           </div>

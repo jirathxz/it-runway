@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { registrations, events } from "@/lib/schema";
+import { registrations, events, registrationCancellations } from "@/lib/schema";
 import { eq, and } from "drizzle-orm";
 import { headers } from "next/headers";
+import { recordAuditLog } from "@/lib/audit-logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -74,10 +75,40 @@ export async function POST(req: NextRequest) {
       .update(registrations)
       .set({
         status: "cancelled",
+        registrationStatus: "CANCELLED",
       })
       .where(eq(registrations.id, registrationId));
 
     const refundRef = `REFUND-NP-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // Persist into registrationCancellations table for financial accounting
+    await db.insert(registrationCancellations).values({
+      registrationId: target.id,
+      userId: session.user.id,
+      reason: reason || "ติดภารกิจด่วน",
+      refundMethod: refundBank?.toLowerCase().includes("bank") ? "bank_account" : "promptpay",
+      refundAccount: refundAccount || "คืนผ่านช่องทางเดิม",
+      refundAmount: 650,
+      status: "completed",
+    });
+
+    // Record audit log
+    await recordAuditLog({
+      userId: session.user.id,
+      userName: session.user.name,
+      userRole: "user",
+      action: "ADMIN_CANCEL_REGISTRATION",
+      entityType: "registration",
+      entityId: registrationId,
+      fromState: target.status,
+      toState: "cancelled",
+      details: {
+        bibNumber: target.bibNumber,
+        eventTitle: target.eventTitle,
+        reason: reason || "ติดภารกิจด่วน",
+        refundRef,
+      },
+    });
 
     // Dispatch multi-channel notification for Event Cancelled / Refund
     try {

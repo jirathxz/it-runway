@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { events, registrations, user } from "@/lib/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, or } from "drizzle-orm";
 import { apiSuccess, apiError } from "@/lib/api-response";
 import { recordAuditLog } from "@/lib/audit-logger";
 
@@ -25,14 +25,20 @@ export async function GET(req: NextRequest) {
     const isAdmin = (session.user as any)?.role === "admin";
 
     // Query events to verify authorization (Strictly organizer's own approved events)
-    const allEvents = await db.select().from(events);
     const accessibleEvents = isAdmin
-      ? allEvents
-      : allEvents.filter(
-          (ev) =>
-            ev.organizerId === session.user.id &&
-            (ev.approvalStatus === "approved" || ev.approvalStatus === "APPROVED")
-        );
+      ? await db.select().from(events)
+      : await db
+          .select()
+          .from(events)
+          .where(
+            and(
+              eq(events.organizerId, session.user.id),
+              or(
+                eq(events.approvalStatus, "approved"),
+                eq(events.approvalStatus, "APPROVED")
+              )
+            )
+          );
 
     if (accessibleEvents.length === 0) {
       return apiError(

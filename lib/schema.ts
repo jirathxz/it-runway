@@ -27,6 +27,7 @@ export const events = pgTable("events", {
   date: timestamp("date", { withTimezone: true }).notNull(),
   distance: text("distance").notNull(), // e.g. "5 / 10 / 21 KM"
   price: integer("price").notNull(), // 650
+  slots: integer("slots").notNull().default(500),
   
   // Distinct Lifecycle Status
   eventStatus: text("event_status").notNull().default("REGISTRATION_OPEN"), // DRAFT, PENDING_APPROVAL, APPROVED, REGISTRATION_OPEN, REGISTRATION_CLOSED, RACE_DAY, RESULT_PROCESSING, COMPLETED, ARCHIVED

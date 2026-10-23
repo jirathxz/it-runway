@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Ticket, Sparkles, ArrowLeft, QrCode } from "lucide-react";
+import { User, Ticket, Sparkles, ArrowLeft, QrCode, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { useSession } from "@/lib/auth-client";
@@ -33,7 +33,8 @@ export function AccountNav({ bibCount = 3 }: AccountNavProps) {
   const isProfile = pathname === "/account" || pathname === "/account/profile";
   const isBibs = pathname === "/account/bibs" || pathname === "/my-events";
   const isCheckin = pathname.startsWith("/organizer/checkin");
-  const isOrganizer = organizerStatus?.isOrganizer || (session?.user as any)?.role === "admin";
+  const isAdmin = (session?.user as any)?.role === "admin";
+  const isOrganizer = organizerStatus?.isOrganizer || isAdmin;
 
   return (
     <div className="w-full mb-8">
@@ -57,12 +58,12 @@ export function AccountNav({ bibCount = 3 }: AccountNavProps) {
 
       {/* Main Tab Switcher */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-1.5 rounded-2xl border border-[var(--line)] bg-[var(--surface)] shadow-[var(--shadow-near)]">
-        <div className="grid grid-cols-2 sm:flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
           {/* Tab 1: Profile */}
           <Link
             href="/account"
             className={cn(
-              "flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-semibold transition-all select-none",
+              "flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-semibold transition-all select-none",
               isProfile
                 ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-md font-bold"
                 : "text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)]"
@@ -76,7 +77,7 @@ export function AccountNav({ bibCount = 3 }: AccountNavProps) {
           <Link
             href="/account/bibs"
             className={cn(
-              "flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-semibold transition-all select-none",
+              "flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-semibold transition-all select-none",
               isBibs
                 ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-md font-bold"
                 : "text-[var(--ink-2)] hover:text-[var(--ink)] hover:bg-[var(--surface-2)]"
@@ -101,16 +102,30 @@ export function AccountNav({ bibCount = 3 }: AccountNavProps) {
             <Link
               href="/organizer/checkin"
               className={cn(
-                "col-span-2 sm:col-span-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-semibold transition-all select-none border border-emerald-500/30",
+                "flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-semibold transition-all select-none border border-emerald-500/30",
                 isCheckin
                   ? "bg-emerald-500 text-white shadow-md font-bold"
                   : "text-emerald-400 hover:bg-emerald-500/10 bg-emerald-500/5 font-bold"
               )}
             >
               <QrCode className="size-4 shrink-0 text-emerald-400" />
-              <span>แถบตรวจ BIB นักวิ่ง</span>
+              <span>ตรวจ BIB</span>
               <span className="px-1.5 py-0.25 rounded bg-emerald-500/20 text-emerald-300 text-[9px] font-mono font-bold">
                 GATE
+              </span>
+            </Link>
+          )}
+
+          {/* Tab 4: Admin Portal Link (when admin) */}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl font-[var(--font-text)] text-xs sm:text-sm font-bold transition-all select-none border border-amber-500/40 bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 shadow-xs"
+            >
+              <Shield className="size-4 shrink-0 text-amber-400" />
+              <span>ระบบแอดมิน</span>
+              <span className="px-1.5 py-0.25 rounded bg-amber-500/30 text-amber-200 text-[9px] font-mono font-black">
+                ADMIN
               </span>
             </Link>
           )}

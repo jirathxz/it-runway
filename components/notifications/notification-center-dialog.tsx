@@ -28,7 +28,9 @@ import {
   Check,
   RefreshCw,
   Zap,
+  ChevronDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NotificationCenterDialogProps {
   open: boolean;
@@ -112,24 +114,28 @@ export function NotificationCenterDialog({
   });
   const [activeTab, setActiveTab] = React.useState<"all" | "in_app" | "email" | "sms" | "push">("all");
   const [loading, setLoading] = React.useState(false);
-  const [selectedTestEvent, setSelectedTestEvent] = React.useState<string>("REGISTRATION_CONFIRMED");
+  const [selectedTestEvent, setSelectedTestEvent] = React.useState("REGISTRATION_CONFIRMED");
   const [triggering, setTriggering] = React.useState(false);
   const [triggerSuccess, setTriggerSuccess] = React.useState<string | null>(null);
+  const [showSimulator, setShowSimulator] = React.useState(false);
 
   const fetchNotifications = React.useCallback(async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/notifications");
-      const json = await res.json();
-      const payload = json.data || json;
-
       if (res.ok) {
+        const json = await res.json();
+        const payload = json.data || json;
         setNotificationsList(payload.notifications || []);
         if (payload.counts) {
           setCounts(payload.counts);
           if (onUnreadCountChange) {
-            onUnreadCountChange(payload.counts.unread);
+            const unread = Number(payload.counts.unread) || 0;
+            onUnreadCountChange(unread > 0 ? unread : 0);
           }
+        } else {
+          setCounts({ total: 0, unread: 0, email: 0, sms: 0, push: 0, inApp: 0 });
+          if (onUnreadCountChange) onUnreadCountChange(0);
         }
       }
     } catch (err) {
@@ -147,10 +153,36 @@ export function NotificationCenterDialog({
 
   const handleMarkAllRead = async () => {
     try {
+      setNotificationsList((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setCounts((prev) => ({ ...prev, unread: 0 }));
+      if (onUnreadCountChange) {
+        onUnreadCountChange(0);
+      }
       await fetch("/api/notifications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ markAll: true }),
+      });
+      fetchNotifications();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleMarkSingleRead = async (notificationId: string) => {
+    try {
+      setNotificationsList((prev) =>
+        prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+      );
+      setCounts((prev) => {
+        const nextUnread = Math.max(0, prev.unread - 1);
+        if (onUnreadCountChange) onUnreadCountChange(nextUnread);
+        return { ...prev, unread: nextUnread };
+      });
+      await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notificationId }),
       });
       fetchNotifications();
     } catch (err) {
@@ -192,36 +224,54 @@ export function NotificationCenterDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col p-0 overflow-hidden bg-[var(--surface)] border-[var(--line)]">
+      <DialogContent className="max-w-3xl w-[calc(100vw-24px)] sm:w-full max-h-[85dvh] flex flex-col p-0 overflow-hidden bg-[var(--surface)] border-[var(--line)]">
         {/* Header */}
-        <DialogHeader className="p-6 pb-4 border-b border-[var(--line)] space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="size-9 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center">
-                <Bell className="size-5" />
+        <DialogHeader className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-[var(--line)] space-y-2.5 shrink-0 pr-10 sm:pr-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="size-9 sm:size-10 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center shrink-0 border border-[var(--accent)]/20 shadow-xs">
+                <Bell className="size-4 sm:size-5" />
               </div>
-              <div>
-                <DialogTitle className="text-lg font-bold font-[var(--font-display)] flex items-center gap-2">
-                  <span>ศูนย์แจ้งเตือนมัลติแชนแนล (Notification Center)</span>
+              <div className="min-w-0 space-y-0.5">
+                <DialogTitle className="text-base sm:text-lg font-bold font-[var(--font-display)] flex flex-wrap items-center gap-2">
+                  <span>ศูนย์แจ้งเตือนมัลติแชนแนล</span>
                   {counts.unread > 0 && (
                     <Badge variant="destructive" size="sm" className="font-mono text-[10px]">
                       {counts.unread} ใหม่
                     </Badge>
                   )}
                 </DialogTitle>
-                <DialogDescription className="text-xs text-[var(--ink-2)]">
-                  รองรับ Email, SMS, Web Push และ In-App ผ่าน 9 Event หลักของระบบ
+                <DialogDescription className="text-[11px] sm:text-xs text-[var(--ink-2)] truncate">
+                  รองรับ Email, SMS, Web Push และ In-App ตลอด 24 ชม.
                 </DialogDescription>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-start sm:self-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSimulator(!showSimulator)}
+                className={cn(
+                  "h-8 px-2.5 text-xs font-mono transition-all cursor-pointer rounded-lg",
+                  showSimulator
+                    ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/40"
+                    : "text-[var(--ink-2)] hover:text-[var(--ink)]"
+                )}
+                title="เปิด/ปิด เครื่องมือทดสอบจำลองสัญญาณแจ้งเตือน"
+              >
+                <Zap className="size-3 text-[var(--accent)] mr-1" />
+                <span>{showSimulator ? "ซ่อนเครื่องมือ" : "เครื่องมือทดสอบ"}</span>
+                <ChevronDown className={cn("size-3 ml-1 transition-transform duration-200", showSimulator && "rotate-180")} />
+              </Button>
+
               <Button
                 variant="outline"
                 size="sm"
                 onClick={fetchNotifications}
                 disabled={loading}
-                className="h-8 text-xs font-mono cursor-pointer"
+                className="h-8 px-2.5 text-xs font-mono cursor-pointer rounded-lg"
+                title="รีเฟรชการแจ้งเตือน"
               >
                 <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
               </Button>
@@ -230,61 +280,63 @@ export function NotificationCenterDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleMarkAllRead}
-                  className="h-8 text-xs text-[var(--accent)] font-semibold cursor-pointer"
+                  className="h-8 px-2 text-xs text-[var(--accent)] font-semibold cursor-pointer"
                 >
-                  <Check className="size-3.5 mr-1" />
+                  <Check className="size-3 mr-1" />
                   อ่านทั้งหมด
                 </Button>
               )}
             </div>
           </div>
 
-          {/* Test Trigger Simulator Box */}
-          <div className="p-3.5 rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/5 flex flex-col gap-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
-                <Zap className="size-4 text-[var(--accent)] shrink-0" />
-                <span>จำลองการส่งการแจ้งเตือน (9 Event Simulator)</span>
+          {/* Test Trigger Simulator Box (Collapsible) */}
+          {showSimulator && (
+            <div className="p-3 sm:p-4 rounded-xl border border-[var(--accent)]/30 bg-[var(--surface-2)] flex flex-col gap-2.5 animate-in slide-in-from-top-2 duration-200">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[var(--ink)]">
+                  <Zap className="size-3.5 sm:size-4 text-[var(--accent)] shrink-0" />
+                  <span>จำลองการส่งการแจ้งเตือน (9 Event Simulator)</span>
+                </div>
+                <Badge variant="outline" className="text-[10px] font-mono text-[var(--accent)] border-[var(--accent)]/30">
+                  4 ช่องทางพร้อมกัน
+                </Badge>
               </div>
-              <Badge variant="outline" className="text-[10px] font-mono text-[var(--accent)] border-[var(--accent)]/30">
-                4 ช่องทางพร้อมกัน
-              </Badge>
-            </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-              <select
-                value={selectedTestEvent}
-                onChange={(e) => setSelectedTestEvent(e.target.value)}
-                className="h-9 flex-1 rounded-lg border border-[var(--line)] bg-[var(--surface-2)] px-3 text-xs font-semibold text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] cursor-pointer"
-              >
-                {Object.entries(EVENT_TYPE_CONFIG).map(([key, cfg]) => (
-                  <option key={key} value={key}>
-                    {cfg.label} ({key})
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-col gap-2 w-full">
+                <select
+                  value={selectedTestEvent}
+                  onChange={(e) => setSelectedTestEvent(e.target.value)}
+                  className="h-10 w-full rounded-xl border border-[var(--line)] bg-[var(--surface)] px-3 text-xs font-semibold text-[var(--ink)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] cursor-pointer truncate"
+                >
+                  {Object.entries(EVENT_TYPE_CONFIG).map(([key, cfg]) => (
+                    <option key={key} value={key}>
+                      {cfg.label} ({key})
+                    </option>
+                  ))}
+                </select>
 
-              <Button
-                size="sm"
-                onClick={handleTriggerTest}
-                disabled={triggering}
-                className="h-9 px-4 text-xs font-bold gap-1.5 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 shrink-0"
-              >
-                <Send className={`size-3.5 ${triggering ? "animate-spin" : ""}`} />
-                <span>{triggering ? "กำลังส่ง..." : "ยิงทดสอบ"}</span>
-              </Button>
-            </div>
-          </div>
+                <Button
+                  size="sm"
+                  onClick={handleTriggerTest}
+                  disabled={triggering}
+                  className="h-10 px-4 text-xs font-bold gap-2 cursor-pointer bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 w-full justify-center shadow-xs rounded-xl"
+                >
+                  <Send className={`size-3.5 ${triggering ? "animate-spin" : ""}`} />
+                  <span>{triggering ? "กำลังส่ง..." : "ส่งการแจ้งเตือนทดสอบ (4 ช่องทาง)"}</span>
+                </Button>
+              </div>
 
-          {triggerSuccess && (
-            <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
-              <CheckCircle2 className="size-4 shrink-0" />
-              <span>{triggerSuccess}</span>
+              {triggerSuccess && (
+                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                  <CheckCircle2 className="size-4 shrink-0" />
+                  <span>{triggerSuccess}</span>
+                </div>
+              )}
             </div>
           )}
 
           {/* Channel Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pt-2 border-t border-[var(--line)] scrollbar-none">
+          <div className="flex items-center gap-1 overflow-x-auto pt-2 border-t border-[var(--line)] scroll-x touch-pan-x w-full">
             <button
               onClick={() => setActiveTab("all")}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
@@ -347,8 +399,19 @@ export function NotificationCenterDialog({
           {filteredNotifs.length === 0 ? (
             <div className="text-center py-12 text-[var(--ink-3)] space-y-2">
               <Bell className="size-10 mx-auto opacity-30" />
-              <p className="text-sm font-bold">ไม่มีการแจ้งเตือนในหมวดหมู่นี้</p>
-              <p className="text-xs">กดปุ่ม "ยิงทดสอบ" ด้านบนเพื่อจำลองการส่งการแจ้งเตือน</p>
+              <p className="text-sm font-bold text-[var(--ink-2)]">ไม่มีการแจ้งเตือนในหมวดหมู่นี้</p>
+              <p className="text-xs max-w-sm mx-auto">ระบบจะแจ้งเตือนอัตโนมัติเมื่อมีอัปเดตงานวิ่ง ผลการแข่งขัน หรือสถานะการชำระเงิน</p>
+              {!showSimulator && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSimulator(true)}
+                  className="mt-2 text-xs text-[var(--accent)] font-semibold hover:bg-[var(--accent)]/10 cursor-pointer"
+                >
+                  <Zap className="size-3 mr-1" />
+                  <span>เปิดเครื่องมือจำลองเพื่อทดสอบระบบ</span>
+                </Button>
+              )}
             </div>
           ) : (
             filteredNotifs.map((n) => {
@@ -363,9 +426,14 @@ export function NotificationCenterDialog({
               return (
                 <div
                   key={n.id}
+                  onClick={() => {
+                    if (!n.isRead && n.channel === "in_app") {
+                      handleMarkSingleRead(n.id);
+                    }
+                  }}
                   className={`p-4 rounded-2xl border transition-all ${
                     !n.isRead && n.channel === "in_app"
-                      ? "border-[var(--accent)]/40 bg-[var(--accent)]/5"
+                      ? "border-[var(--accent)]/40 bg-[var(--accent)]/5 cursor-pointer hover:border-[var(--accent)]"
                       : "border-[var(--line)] bg-[var(--surface-2)]"
                   }`}
                 >
@@ -384,6 +452,11 @@ export function NotificationCenterDialog({
                           <Badge variant="outline" className="text-[10px] font-mono uppercase bg-[var(--surface)] text-[var(--ink-2)] border-[var(--line)]">
                             {n.channel}
                           </Badge>
+                          {!n.isRead && n.channel === "in_app" && (
+                            <Badge variant="destructive" className="text-[9px] font-mono py-0 px-1.5 h-4">
+                              ใหม่ (คลิกเพื่ออ่าน)
+                            </Badge>
+                          )}
                           {n.recipient && (
                             <span className="text-[11px] font-mono text-[var(--ink-3)]">
                               To: {n.recipient}

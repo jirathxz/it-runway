@@ -97,6 +97,7 @@ export function AccountProfileView() {
   const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [bibCount, setBibCount] = useState(0);
 
   // Avatar Edit Modal State
@@ -129,7 +130,7 @@ export function AccountProfileView() {
             image: p.image || session.user.image || "",
             isGoogleUser: Boolean(p.isGoogleUser),
             googleImage: p.googleImage || session.user.image || "",
-            phone: p.phone || "",
+            phone: p.phone || p.phoneNumber || "",
             gender: p.gender || "male",
             birthdate: p.birthdate || "",
             bloodType: p.bloodType || "O+",
@@ -162,6 +163,7 @@ export function AccountProfileView() {
     e.preventDefault();
     setSaving(true);
     setSaveSuccess(false);
+    setSaveError(null);
 
     try {
       const res = await fetch("/api/user/profile", {
@@ -170,16 +172,36 @@ export function AccountProfileView() {
         body: JSON.stringify(profile),
       });
 
-      if (res.ok) {
+      const json = await res.json().catch(() => ({}));
+
+      if (res.ok && json.success !== false) {
         setSaveSuccess(true);
         setSaveMessage("บันทึกข้อมูลบัญชีนักวิ่งลงฐานข้อมูลสำเร็จเรียบร้อยแล้ว");
-        setTimeout(() => setSaveSuccess(false), 4000);
+        if (json.data) {
+          setProfile((prev) => ({
+            ...prev,
+            name: json.data.name ?? prev.name,
+            phone: json.data.phoneNumber ?? prev.phone,
+            gender: json.data.gender ?? prev.gender,
+            birthdate: json.data.birthdate ?? prev.birthdate,
+            bloodType: json.data.bloodType ?? prev.bloodType,
+            emergencyName: json.data.emergencyName ?? prev.emergencyName,
+            emergencyPhone: json.data.emergencyPhone ?? prev.emergencyPhone,
+            medicalConditions: json.data.medicalConditions ?? prev.medicalConditions,
+            tshirtSize: json.data.tshirtSize ?? prev.tshirtSize,
+            preferredDistance: json.data.preferredDistance ?? prev.preferredDistance,
+            runningClub: json.data.runningClub ?? prev.runningClub,
+            targetPace: json.data.targetPace ?? prev.targetPace,
+          }));
+        }
+        setTimeout(() => setSaveSuccess(false), 5000);
       } else {
-        alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง");
+        const errMsg = json?.error?.message || json?.error || "เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง";
+        setSaveError(errMsg);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Save error:", err);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล");
+      setSaveError("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล: " + (err?.message || ""));
     } finally {
       setSaving(false);
     }
@@ -327,6 +349,23 @@ export function AccountProfileView() {
         <div className="mb-6 flex items-center gap-3 p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
           <CheckCircle2 className="size-5 shrink-0 text-emerald-400" />
           <span>{saveMessage}</span>
+        </div>
+      )}
+
+      {/* Save Error Alert */}
+      {saveError && (
+        <div className="mb-6 flex items-center justify-between gap-3 p-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-400 text-sm font-medium animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3">
+            <XCircle className="size-5 shrink-0 text-rose-400" />
+            <span>{saveError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSaveError(null)}
+            className="p-1 rounded-lg hover:bg-rose-500/20 text-rose-400 cursor-pointer"
+          >
+            <X className="size-4" />
+          </button>
         </div>
       )}
 
@@ -486,8 +525,49 @@ export function AccountProfileView() {
             </CardFooter>
           </Card>
 
+          {/* Admin Control Center Shortcut Card (Only shown to Admins) */}
+          {isAdmin && (
+            <Card className="p-4 border-amber-500/30 bg-gradient-to-br from-amber-500/10 via-[var(--surface)] to-[var(--surface-2)] text-xs flex flex-col gap-3 shadow-md">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-bold text-amber-300">
+                  <Shield className="size-4 text-amber-400" />
+                  <span>IT RUNWAY ADMIN</span>
+                </div>
+                <Badge variant="default" size="sm" className="bg-amber-500 text-slate-950 font-bold font-mono text-[9px]">
+                  SUPERUSER
+                </Badge>
+              </div>
+              <p className="text-[var(--ink-2)] text-[11px] leading-relaxed">
+                คุณมีสิทธิ์เข้าถึงพอร์ทัลควบคุมหลังบ้านเต็มรูปแบบ สามารถอนุมัติงานวิ่ง จัดการสมาชิก และตรวจสอบผลการจับเวลา
+              </p>
+              <div className="flex flex-col gap-1.5 pt-1">
+                <Button
+                  asChild
+                  size="sm"
+                  className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs h-9 shadow-xs cursor-pointer"
+                >
+                  <Link href="/admin" className="flex items-center justify-center gap-1.5">
+                    <Shield className="size-3.5 stroke-[2.5]" />
+                    <span>เข้าสู่ศูนย์ควบคุม Admin</span>
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-xs h-8 border-amber-500/30 text-amber-300 hover:bg-amber-500/10 cursor-pointer"
+                >
+                  <Link href="/admin/events" className="flex items-center justify-center gap-1.5">
+                    <CheckCircle2 className="size-3.5 text-emerald-400" />
+                    <span>ตรวจสอบคำขอจัดงานวิ่ง</span>
+                  </Link>
+                </Button>
+              </div>
+            </Card>
+          )}
+
           {/* Quick Account Security Info */}
-          <Card className="p-4 border-[var(--line)] bg-[var(--surface)] text-xs space-y-3">
+          <Card className="p-4 border-[var(--line)] bg-[var(--surface)] text-xs flex flex-col gap-3">
             <div className="flex items-center gap-2 font-bold text-[var(--ink)]">
               <Shield className="size-4 text-[var(--positive)]" />
               <span>ความปลอดภัยของบัญชี</span>
@@ -1115,7 +1195,7 @@ export function AccountProfileView() {
       {/* ========================================================================= */}
       {avatarModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-7 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-3xl border border-[var(--line)] bg-[var(--surface)] p-6 sm:p-7 shadow-2xl">
             {/* Close Button */}
             <button
               type="button"

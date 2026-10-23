@@ -53,6 +53,7 @@ import { CertificateData } from "@/lib/certificate-canvas";
 
 interface DigitalBib {
   id: string;
+  eventId?: string;
   bibNumber: string;
   corral: string;
   eventTitle: string;
@@ -664,7 +665,7 @@ export function BibsView({ initialEvents = [] }: BibsViewProps) {
                           <div className="flex flex-col">
                             <span className="font-bold text-red-200">รายการนี้ถูกยกเลิกแล้ว</span>
                             <span className="text-[11px] text-red-300/80">
-                              ระบบได้ทำเรื่องคืนเงินและยกเลิกหมายเลข BIB เรียบร้อยแล้ว
+                              ระบบได้ทำการยกเลิกหมายเลข BIB เดิมเรียบร้อยแล้ว (คุณสามารถลงทะเบียนเข้าร่วมงานนี้ใหม่อีกครั้งได้ตลอดเวลา)
                             </span>
                           </div>
                         </div>
@@ -710,7 +711,7 @@ export function BibsView({ initialEvents = [] }: BibsViewProps) {
 
                     {/* Actions Buttons */}
                     <div className="flex flex-wrap items-center justify-between gap-2.5">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -720,6 +721,20 @@ export function BibsView({ initialEvents = [] }: BibsViewProps) {
                           <span>รายละเอียดงานวิ่ง</span>
                           <ChevronRight className="size-3.5 ml-1" />
                         </Button>
+
+                        {/* Re-register Button for Cancelled BIBs */}
+                        {isCancelled && (
+                          <Button
+                            asChild
+                            size="sm"
+                            className="bg-[var(--accent)] text-[var(--accent-ink)] hover:brightness-110 font-bold text-xs shadow-sm cursor-pointer"
+                          >
+                            <Link href={bib.eventId ? `/events/${bib.eventId}` : "/events"}>
+                              <RotateCcw className="size-3.5 mr-1.5" />
+                              <span>ลงทะเบียนใหม่อีกครั้ง</span>
+                            </Link>
+                          </Button>
+                        )}
 
                         {/* Cancel Event Button (Only for upcoming events) */}
                         {isUpcoming && (

@@ -229,12 +229,12 @@ export function ResultsView() {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-8 animate-in fade-in duration-200">
         {/* Top Feature Mode Switcher */}
-        <div className="flex items-center gap-2 p-1.5 bg-[var(--surface-2)] rounded-2xl border border-[var(--line)] w-fit">
+        <div className="grid grid-cols-1 sm:flex items-center gap-2 p-1.5 bg-[var(--surface-2)] rounded-2xl border border-[var(--line)] w-full sm:w-fit">
           <button
             type="button"
             onClick={() => setMainTab("results")}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+              "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
               mainTab === "results"
                 ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-md"
                 : "text-[var(--ink-2)] hover:text-[var(--ink)]"
@@ -247,7 +247,7 @@ export function ResultsView() {
             type="button"
             onClick={() => setMainTab("photos")}
             className={cn(
-              "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer",
+              "flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer",
               mainTab === "photos"
                 ? "bg-[var(--accent)] text-[var(--accent-ink)] shadow-md"
                 : "text-[var(--ink-2)] hover:text-[var(--ink)]"
@@ -263,7 +263,7 @@ export function ResultsView() {
         ) : (
           <>
             {/* Header Hero Banner */}
-            <div className="relative overflow-hidden rounded-3xl border border-[var(--line)] bg-gradient-to-b from-[var(--surface)] via-[var(--surface-2)] to-[var(--surface)] p-6 sm:p-8 lg:p-10 shadow-[var(--shadow-far)]">
+            <div className="relative overflow-hidden rounded-3xl border border-[var(--line)] bg-gradient-to-b from-[var(--surface)] via-[var(--surface-2)] to-[var(--surface)] p-5 sm:p-8 lg:p-10 shadow-[var(--shadow-far)]">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <Badge
               variant="outline"
@@ -289,50 +289,50 @@ export function ResultsView() {
 
           {/* Quick Summary Counter Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-[var(--line)]">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)]">
-                <Trophy className="size-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] shrink-0">
+                <Trophy className="size-4 sm:size-5" />
               </div>
-              <div>
-                <div className="text-[11px] font-mono text-[var(--ink-3)]">งานวิ่งที่บันทึกผลแล้ว</div>
-                <div className="text-base sm:text-lg font-bold font-mono text-[var(--ink)]">
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-mono text-[var(--ink-3)] truncate">งานวิ่งบันทึกผลแล้ว</div>
+                <div className="text-sm sm:text-lg font-bold font-mono text-[var(--ink)] truncate">
                   {eventsList.length} รายการ
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-                <Users className="size-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0">
+                <Users className="size-4 sm:size-5" />
               </div>
-              <div>
-                <div className="text-[11px] font-mono text-[var(--ink-3)]">นักวิ่งเข้าเส้นชัยสะสม</div>
-                <div className="text-base sm:text-lg font-bold font-mono text-emerald-400">
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-mono text-[var(--ink-3)] truncate">นักวิ่งเข้าเส้นชัยสะสม</div>
+                <div className="text-sm sm:text-lg font-bold font-mono text-emerald-400 truncate">
                   {eventsList.reduce((acc, e) => acc + e.totalFinishers, 0).toLocaleString()} คน
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
-                <Timer className="size-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-amber-500/10 text-amber-400 shrink-0">
+                <Timer className="size-4 sm:size-5" />
               </div>
-              <div>
-                <div className="text-[11px] font-mono text-[var(--ink-3)]">ระบบจับเวลา</div>
-                <div className="text-base sm:text-lg font-bold font-mono text-amber-400">
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-mono text-[var(--ink-3)] truncate">ระบบจับเวลา</div>
+                <div className="text-xs sm:text-base font-bold font-mono text-amber-400 truncate">
                   RFID CHIP GATE
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
-                <FileText className="size-5" />
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 shrink-0">
+                <FileText className="size-4 sm:size-5" />
               </div>
-              <div>
-                <div className="text-[11px] font-mono text-[var(--ink-3)]">ใบรับรองผลแข่ง</div>
-                <div className="text-base sm:text-lg font-bold font-mono text-indigo-400">
-                  e-Certificate พร้อม
+              <div className="min-w-0">
+                <div className="text-[10px] sm:text-[11px] font-mono text-[var(--ink-3)] truncate">ใบรับรองผลแข่ง</div>
+                <div className="text-xs sm:text-base font-bold font-mono text-indigo-400 truncate">
+                  e-Certificate
                 </div>
               </div>
             </div>
@@ -340,8 +340,8 @@ export function ResultsView() {
         </div>
 
         {/* Filter and Search Bar for Completed Events */}
-        <Card className="border-[var(--line)] bg-[var(--surface)] p-4 sm:p-5 shadow-[var(--shadow-near)]">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+        <Card className="border-[var(--line)] bg-[var(--surface)] p-3.5 sm:p-5 shadow-[var(--shadow-near)]">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 sm:gap-4">
             {/* Search Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-[var(--ink-3)]" />
@@ -354,13 +354,13 @@ export function ResultsView() {
               />
             </div>
 
-            {/* Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1.5">
+            {/* Filter Pills with Horizontal Touch Scroll */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scroll-x touch-pan-x w-full md:w-auto">
               <button
                 type="button"
                 onClick={() => setEventCategoryFilter("all")}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer shrink-0",
                   eventCategoryFilter === "all"
                     ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow"
                     : "bg-[var(--surface-2)] text-[var(--ink-2)] hover:text-[var(--ink)]"
@@ -372,7 +372,7 @@ export function ResultsView() {
                 type="button"
                 onClick={() => setEventCategoryFilter("21k")}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer shrink-0",
                   eventCategoryFilter === "21k"
                     ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow"
                     : "bg-[var(--surface-2)] text-[var(--ink-2)] hover:text-[var(--ink)]"
@@ -384,7 +384,7 @@ export function ResultsView() {
                 type="button"
                 onClick={() => setEventCategoryFilter("10k")}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer shrink-0",
                   eventCategoryFilter === "10k"
                     ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow"
                     : "bg-[var(--surface-2)] text-[var(--ink-2)] hover:text-[var(--ink)]"
@@ -396,7 +396,7 @@ export function ResultsView() {
                 type="button"
                 onClick={() => setEventCategoryFilter("5k")}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer shrink-0",
                   eventCategoryFilter === "5k"
                     ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow"
                     : "bg-[var(--surface-2)] text-[var(--ink-2)] hover:text-[var(--ink)]"
@@ -408,7 +408,7 @@ export function ResultsView() {
                 type="button"
                 onClick={() => setEventCategoryFilter("trail")}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap cursor-pointer shrink-0",
                   eventCategoryFilter === "trail"
                     ? "bg-[var(--accent)] text-[var(--accent-ink)] font-bold shadow"
                     : "bg-[var(--surface-2)] text-[var(--ink-2)] hover:text-[var(--ink)]"

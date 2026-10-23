@@ -24,6 +24,7 @@ import {
   QrCode,
   Bell,
   PlusCircle,
+  Camera,
   type LucideIcon,
 } from "lucide-react";
 import { SearchCommandDialog } from "@/components/search/search-command-dialog";
@@ -67,6 +68,12 @@ const defaultNavItems: NavItem[] = [
     badgeVariant: "success",
     number: "04",
   },
+  {
+    label: "ภาพถ่าย",
+    href: "/photos",
+    icon: Camera,
+    number: "05",
+  },
 ];
 
 interface NavbarProps {
@@ -98,14 +105,24 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
   React.useEffect(() => {
     if (session?.user) {
       fetch("/api/notifications")
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch");
+          return res.json();
+        })
         .then((json) => {
           const payload = json.data || json;
-          if (payload.counts) {
-            setUnreadNotifCount(payload.counts.unread || 0);
+          if (payload && payload.counts) {
+            const unread = Number(payload.counts.unread);
+            setUnreadNotifCount(!isNaN(unread) && unread > 0 ? unread : 0);
+          } else {
+            setUnreadNotifCount(0);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          setUnreadNotifCount(0);
+        });
+    } else {
+      setUnreadNotifCount(0);
     }
   }, [session]);
 
@@ -179,7 +196,7 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
   const userInitials = session?.user?.name
     ? session.user.name
         .split(" ")
-        .map((n) => n[0])
+        .map((n: string) => n[0])
         .join("")
         .toUpperCase()
         .slice(0, 2)
@@ -297,11 +314,11 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
 
           {/* Right: Quick Search, Notification, Auth Profile & CTA */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Quick Search Trigger */}
+            {/* Quick Search Trigger (Tablet & Desktop) */}
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="flex h-9 items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] px-2 sm:px-2.5 xl:px-3 text-xs text-[var(--ink-2)] transition-all hover:border-[var(--ink-3)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer"
+              className="hidden sm:flex h-9 items-center gap-2 rounded-[var(--radius)] border border-[var(--line)] bg-[var(--surface)] px-2 sm:px-2.5 xl:px-3 text-xs text-[var(--ink-2)] transition-all hover:border-[var(--ink-3)] hover:text-[var(--ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] cursor-pointer"
               aria-label="ค้นหางานวิ่ง (Ctrl+K)"
             >
               <Search className="size-3.5 shrink-0 text-[var(--accent)]" />
@@ -322,11 +339,11 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                 aria-label="ศูนย์แจ้งเตือน"
               >
                 <Bell className="size-4" />
-                {unreadNotifCount > 0 && (
-                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-[var(--base)] animate-pulse font-mono">
+                {unreadNotifCount > 0 ? (
+                  <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-[var(--base)] animate-pulse font-mono pointer-events-none">
                     {unreadNotifCount > 9 ? "9+" : unreadNotifCount}
                   </span>
-                )}
+                ) : null}
               </button>
             )}
 
@@ -419,11 +436,11 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                         <Link
                           href="/admin"
                           onClick={() => setUserMenuOpen(false)}
-                          className="flex items-center gap-2 rounded-md px-2.5 py-1.5 text-xs text-[var(--accent)] hover:bg-[var(--surface-2)] font-bold transition-colors"
+                          className="flex items-center gap-2 rounded-md px-2.5 py-2 text-xs font-bold text-amber-300 bg-amber-500/15 border border-amber-500/30 hover:bg-amber-500/25 transition-colors mb-1 shadow-xs"
                           role="menuitem"
                         >
-                          <Shield className="size-3.5 shrink-0" />
-                          <span>แดชบอร์ดแอดมิน & อนุมัติงาน</span>
+                          <Shield className="size-3.5 shrink-0 text-amber-400" />
+                          <span>IT RUNWAY ADMIN (แดชบอร์ด)</span>
                         </Link>
                       )}
 
@@ -498,17 +515,34 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
               </div>
             )}
 
-            {/* Primary CTA (Desktop XL only to avoid navbar overcrowding on laptops) */}
-            <Button
-              asChild
-              size="sm"
-              className="hidden xl:inline-flex h-9 font-bold text-xs shrink-0"
-            >
-              <Link href="/organize" className="inline-flex items-center gap-1.5">
-                <span>จัดงานวิ่ง</span>
-                <ChevronRight className="size-3.5 shrink-0 stroke-[2.5]" />
-              </Link>
-            </Button>
+            {/* Primary CTA (Desktop XL only to avoid navbar overcrowding on laptops/mobile) */}
+            <div className="hidden xl:inline-flex">
+              <Button
+                asChild
+                size="sm"
+                className={cn(
+                  "h-9 font-bold text-xs shrink-0 transition-all",
+                  isAdmin && "bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20"
+                )}
+              >
+                <Link
+                  href={isAdmin ? "/admin" : "/organize"}
+                  className="flex items-center gap-1.5"
+                >
+                  {isAdmin ? (
+                    <>
+                      <Shield className="size-3.5 shrink-0 stroke-[2.5]" />
+                      <span>Admin</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>จัดงานวิ่ง</span>
+                      <ChevronRight className="size-3.5 shrink-0 stroke-[2.5]" />
+                    </>
+                  )}
+                </Link>
+              </Button>
+            </div>
 
             {/* Mobile Hamburger Button (Accessible Touch Target: 44px min-h) */}
             <button
@@ -656,16 +690,41 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mt-1">
-                  {isAdmin && (
+                  {isAdmin ? (
+                    <>
+                      <Button
+                        asChild
+                        variant="default"
+                        size="sm"
+                        className="h-10 text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold col-span-2 shadow-sm"
+                      >
+                        <Link href="/admin" onClick={() => setMobileOpen(false)}>
+                          <Shield className="size-3.5 stroke-[2.5]" />
+                          <span>เข้าสู่ระบบ Admin Panel</span>
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="h-10 text-xs col-span-2"
+                      >
+                        <Link href="/organize" onClick={() => setMobileOpen(false)}>
+                          <PlusCircle className="size-3.5" />
+                          <span>ยื่นคำขอจัดงานวิ่ง</span>
+                        </Link>
+                      </Button>
+                    </>
+                  ) : (
                     <Button
                       asChild
-                      variant="secondary"
+                      variant="default"
                       size="sm"
-                      className="h-10 text-xs text-[var(--accent)] col-span-2"
+                      className="h-10 text-xs col-span-2 font-bold"
                     >
-                      <Link href="/admin" onClick={() => setMobileOpen(false)}>
-                        <Shield className="size-3.5" />
-                        <span>แดชบอร์ดแอดมิน & อนุมัติงาน</span>
+                      <Link href="/organize" onClick={() => setMobileOpen(false)}>
+                        <PlusCircle className="size-3.5" />
+                        <span>ยื่นคำขอจัดงานวิ่ง</span>
                       </Link>
                     </Button>
                   )}
@@ -682,17 +741,6 @@ export function Navbar({ className, items = defaultNavItems }: NavbarProps) {
                       </Link>
                     </Button>
                   )}
-                  <Button
-                    asChild
-                    variant="default"
-                    size="sm"
-                    className="h-10 text-xs col-span-2 font-bold"
-                  >
-                    <Link href="/organize" onClick={() => setMobileOpen(false)}>
-                      <PlusCircle className="size-3.5" />
-                      <span>ยื่นคำขอจัดงานวิ่ง</span>
-                    </Link>
-                  </Button>
                   <Button
                     asChild
                     variant="outline"
